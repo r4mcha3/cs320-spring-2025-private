@@ -23,6 +23,10 @@ let convert (lst : int_or_string list) : int_list_or_string_list list =
   in
   aux [] None lst
 
+type recipe = {
+  name : string;
+  ingrs : string list;
+}
   let recipes_by_ingrs (recs : recipe list) (ingrs : string list) : recipe list =
     let contains_all ingr_list recipe =
       List.for_all (fun ingr -> List.mem ingr ingrs) recipe.ingrs
