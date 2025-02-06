@@ -52,6 +52,11 @@ type free_result =
   | Success of memory
   | Invalid_position
 
+let rec rev_append lst acc =
+  match lst with
+  | [] -> acc
+  | x :: xs -> rev_append xs (x :: acc)
+
 let allocate (size : int) (mem : memory) : alloc_result =
   if size <= 0 then Invalid_size
   else
@@ -64,7 +69,7 @@ let allocate (size : int) (mem : memory) : alloc_result =
           if remaining_free > 0 then (occupied_chunk :: (Free, remaining_free) :: rest)
           else (occupied_chunk :: rest)
         in
-        Success (pos, List.rev_append acc updated_mem)
+        Success (pos, rev_append acc updated_mem)
       | chunk :: rest -> find_fit (pos + snd chunk) (chunk :: acc) rest
     in
     find_fit 0 [] mem
@@ -75,7 +80,7 @@ let free (pos : int) (mem : memory) : free_result =
     let rec free_chunk acc current_pos = function
       | [] -> Invalid_position
       | (Occupied, size) :: rest when current_pos = pos ->
-        let new_mem = List.rev_append acc ((Free, size) :: rest) in
+        let new_mem = rev_append acc ((Free, size) :: rest) in
         let rec merge_free = function
           | (Free, s1) :: (Free, s2) :: tl -> merge_free ((Free, s1 + s2) :: tl)
           | hd :: tl -> hd :: merge_free tl
@@ -84,4 +89,4 @@ let free (pos : int) (mem : memory) : free_result =
         Success (merge_free new_mem)
       | chunk :: rest -> free_chunk (chunk :: acc) (current_pos + snd chunk) rest
     in
-    free_chunk [] 0 mem
+    free_chunk [] 0 mem    
