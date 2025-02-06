@@ -29,8 +29,13 @@ type recipe = {
   ingrs : string list;
 }
 
+let rec all f lst =
+  match lst with
+  | [] -> true
+  | x :: xs -> f x && all f xs
+
 let recipes_by_ingrs (recs : recipe list) (ingrs : string list) : recipe list =
-  let contains_all ings1 ings2 = List.for_all (fun i -> List.mem i ings2) ings1 in
+  let contains_all ings1 ings2 = all (fun i -> List.mem i ings2) ings1 in
   List.filter (fun r -> contains_all r.ingrs ingrs) recs
 
 type mem_status = 
