@@ -55,6 +55,11 @@ let recipes_by_ingrs (recs : recipe list) (ingrs : string list) : recipe list =
   in
   filter_recipes [] recs
 
+let rec rev_append l1 l2 =
+  match l1 with
+  | [] -> l2
+  | x :: xs -> rev_append xs (x :: l2)
+
 let allocate (size : int) (mem : memory) : alloc_result =
   if size <= 0 then Invalid_size else
   let rec find_slot pos acc = function
@@ -62,7 +67,7 @@ let allocate (size : int) (mem : memory) : alloc_result =
     | (Free, n) :: rest when n >= size ->
         let updated = if n = size then (Occupied, size) :: rest
                       else (Occupied, size) :: (Free, n - size) :: rest in
-        Success (pos, List.rev_append acc updated)
+        Success (pos, rev_append acc updated)
     | chunk :: rest -> find_slot (pos + snd chunk) (chunk :: acc) rest
   in
   find_slot 0 [] mem
