@@ -67,8 +67,8 @@ let allocate (size : int) (mem : memory) : alloc_result =
     | (Free, n) :: rest when n >= size ->
         let updated = if n = size then (Occupied, size) :: rest
                       else (Occupied, size) :: (Free, n - size) :: rest in
-        Success (pos, rev_append acc updated)
-    | chunk :: rest -> find_slot (pos + snd chunk) (chunk :: acc) rest
+        Success (pos, List.rev_append acc updated)
+    | (status, n) :: rest -> find_slot (pos + n) ((status, n) :: acc) rest
   in
   find_slot 0 [] mem
 
@@ -84,6 +84,6 @@ let free (pos : int) (mem : memory) : free_result =
           | [] -> []
         in
         Success (List.rev_append acc (merge new_mem))
-    | chunk :: rest -> free_helper (chunk :: acc) (current_pos + snd chunk) rest
+    | (status, n) :: rest -> free_helper ((status, n) :: acc) (current_pos + n) rest
   in
   if pos < 0 then Invalid_position else free_helper [] 0 mem
