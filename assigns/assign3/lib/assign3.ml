@@ -1,5 +1,4 @@
 open Stdlib320
-open Stdlib320.Ntree
 
 type 'a tree =
   | Leaf
