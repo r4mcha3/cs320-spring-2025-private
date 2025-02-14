@@ -73,11 +73,11 @@ let rec subst e1 x e2 =
   | Add (left, right) -> Add (subst e1 x left, subst e1 x right)
   | Mul (left, right) -> Mul (subst e1 x left, subst e1 x right)
 
-let string_of_expr (e : expr) : string =
+let rec string_of_expr e =
   match e with
   | Num n -> string_of_int n
   | Var x -> x
-  | Add (left, right) ->
-      "(" ^ string_of_expr left ^ " + " ^ string_of_expr right ^ ")"
-  | Mul (left, right) ->
-      "(" ^ string_of_expr left ^ " * " ^ string_of_expr right ^ ")"
+  | Add (e1, e2) ->
+      "(" ^ string_of_expr e1 ^ " + " ^ string_of_expr e2 ^ ")"
+  | Mul (e1, e2) ->
+      "(" ^ string_of_expr e1 ^ " * " ^ string_of_expr e2 ^ ")"
