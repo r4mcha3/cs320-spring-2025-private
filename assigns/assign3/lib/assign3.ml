@@ -14,7 +14,7 @@ let rec ntree_of_tree (t : 'a tree) : 'a Stdlib320.ntree option =
         (match left_ntree with Some nt -> [nt] | None -> []) @
         (match right_ntree with Some nt -> [nt] | None -> [])
       in
-      Some (Ntree.Node (x, children))
+      Some (Stdlib320.Ntree.Node (x, children))
 
 let fib3_tail (a, b, c) n =
   let rec aux i x y z =
@@ -33,13 +33,13 @@ let file_tree root paths =
     | [] -> children
     | part :: rest ->
         let child =
-          match List.find_opt (fun (Ntree.Node (name, _)) -> name = part) children with
-          | Some (Ntree.Node (_, subchildren)) ->
-              Ntree.Node (part, insert_path rest subchildren)
+          match List.find_opt (fun (Stdlib320.Ntree.Node (name, _)) -> name = part) children with
+          | Some (Stdlib320.Ntree.Node (_, subchildren)) ->
+              Stdlib320.Ntree.Node (part, insert_path rest subchildren)
           | None ->
-              Ntree.Node (part, insert_path rest [])
+              Stdlib320.Ntree.Node (part, insert_path rest [])
         in
-        child :: List.filter (fun (Ntree.Node (name, _)) -> name <> part) children
+        child :: List.filter (fun (Stdlib320.Ntree.Node (name, _)) -> name <> part) children
   in
   let root_children =
     List.fold_left (fun acc path ->
@@ -47,7 +47,7 @@ let file_tree root paths =
       insert_path parts acc
     ) [] paths
   in
-  Ntree.Node (root, root_children)
+  Stdlib320.Ntree.Node (root, root_children)
 
 type expr =
   | Num of int
