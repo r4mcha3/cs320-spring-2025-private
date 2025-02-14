@@ -5,7 +5,7 @@ type 'a tree =
   | Leaf
   | Node2 of 'a * 'a tree * 'a tree
 
-let rec ntree_of_tree (t : 'a tree) : 'a Stdlib320.Ntree option =
+let rec ntree_of_tree (t : 'a tree) : 'a Ntree.ntree option =
   match t with
   | Leaf -> None
   | Node2 (x, left, right) ->
