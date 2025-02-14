@@ -28,6 +28,16 @@ let fib3_tail (a, b, c) n =
   | 2 -> c
   | _ -> aux 3 a b c
 
+  let split_on_char sep s =
+    let rec aux i j acc =
+      if i >= String.length s then List.rev (String.sub s j (i - j) :: acc)
+      else if s.[i] = sep then
+        aux (i + 1) (i + 1) (String.sub s j (i - j) :: acc)
+      else
+        aux (i + 1) j acc
+    in
+    aux 0 0 []  
+
 let file_tree root paths =
   let rec insert_path path_parts children =
     match path_parts with
@@ -44,7 +54,7 @@ let file_tree root paths =
   in
   let root_children =
     List.fold_left (fun acc path ->
-      let parts = String.split_on_char '/' path in
+      let parts = split_on_char '/' path in
       insert_path parts acc
     ) [] paths
   in
