@@ -53,8 +53,6 @@ let rec tree_filter (p : 'a -> bool) (t : 'a ntree) : 'a ntree option =
         | [] -> None
         | Node (lx, lchildren) :: rest ->
             Some (Node (lx, lchildren @ rest))
-    
-      
 
 type rat = {
     num : int;
