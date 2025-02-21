@@ -66,7 +66,6 @@ let rec random_walk (walk : int -> int list) (start : int) (num_steps : int) : d
     [(start, { num = 1; denom = 1 })] 
   else
     let prev_distr = random_walk walk start (num_steps - 1) in
-
     let rec merge_prob v prob acc =
       match acc with
       | [] -> [(v, prob)]
@@ -90,6 +89,8 @@ let rec random_walk (walk : int -> int list) (start : int) (num_steps : int) : d
           in
           process_distribution rest updated_acc
     in
-
+    let compare_int (a : int) (b : int) : int =
+      if a < b then -1 else if a > b then 1 else 0
+    in
     let final_distr = process_distribution prev_distr [] in
-    List.sort (fun (a, _) (b, _) -> compare a b) final_distr
+    List.sort (fun (a, _) (b, _) -> compare_int a b) final_distr
