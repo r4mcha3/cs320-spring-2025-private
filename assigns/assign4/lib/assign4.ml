@@ -61,36 +61,47 @@ type rat = {
 
 type distr = (int * rat) list
 
+let rec gcd (a : int) (b : int) : int =
+  if b = 0 then abs a else gcd b (a mod b)
+
+let reduce_fraction (r : rat) : rat =
+  let d = gcd r.num r.denom in
+  { num = r.num / d; denom = r.denom / d }
+
 let rec random_walk (walk : int -> int list) (start : int) (num_steps : int) : distr =
   if num_steps = 0 then
-    [(start, { num = 1; denom = 1 })] 
+    [(start, { num = 1; denom = 1 })]  (* Base case: 100% probability at start *)
   else
     let prev_distr = random_walk walk start (num_steps - 1) in
+
     let rec merge_prob v prob acc =
       match acc with
-      | [] -> [(v, prob)]
+      | [] -> [(v, reduce_fraction prob)]
       | (w, p) :: rest ->
           if v = w then
             let common_denom = p.denom * prob.denom in
             let new_num = (p.num * prob.denom) + (prob.num * p.denom) in
-            (w, { num = new_num; denom = common_denom }) :: rest
+            (w, reduce_fraction { num = new_num; denom = common_denom }) :: rest
           else
             (w, p) :: merge_prob v prob rest
     in
+
     let rec process_distribution distr acc =
       match distr with
       | [] -> acc
       | (v, { num; denom }) :: rest ->
           let neighbors = walk v in
           let num_neighbors = List.length neighbors in
-          let new_prob = { num; denom = denom * num_neighbors } in
+          let new_prob = reduce_fraction { num; denom = denom * num_neighbors } in
           let updated_acc =
             List.fold_left (fun acc n -> merge_prob n new_prob acc) acc neighbors
           in
           process_distribution rest updated_acc
     in
+
     let compare_int (a : int) (b : int) : int =
       if a < b then -1 else if a > b then 1 else 0
     in
+
     let final_distr = process_distribution prev_distr [] in
     List.sort (fun (a, _) (b, _) -> compare_int a b) final_distr
