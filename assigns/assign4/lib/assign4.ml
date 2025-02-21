@@ -10,8 +10,19 @@ let rec split_list (l : ('a * 'b) list) : 'a list * 'b list =
       let (lefts, rights) = split_list xs in
       (x :: lefts, y :: rights)
 
-let split_tree (_t : ('a * 'b) ntree) : 'a ntree * 'b ntree =
-  assert false
+let rec split_tree (t : ('a * 'b) ntree) : 'a ntree * 'b ntree =
+  match t with
+  | Node ((x, y), children) ->
+      let left_children, right_children =
+        List.fold_right
+          (fun child (l_acc, r_acc) ->
+              let l_child, r_child = split_tree child in
+              (l_child :: l_acc, r_child :: r_acc))
+          children
+          ([], [])
+      in
+      (Node (x, left_children), Node (y, right_children))
+      
 
 let rec filter_map (f : 'a -> 'b option) (l : 'a list) : 'b list =
   match l with
@@ -21,12 +32,6 @@ let rec filter_map (f : 'a -> 'b option) (l : 'a list) : 'b list =
       | Some y -> y :: filter_map f xs
       | None -> filter_map f xs
     )
-
-let rec split_tree (t : ('a * 'b) ntree) : 'a ntree * 'b ntree =
-  match t with
-  | Node ((x, y), children) ->
-      let left_children, right_children = List.split (List.map split_tree children) in
-      (Node (x, left_children), Node (y, right_children))
 
 let rec tree_filter (p : 'a -> bool) (t : 'a ntree) : 'a ntree option =
   match t with
@@ -78,4 +83,3 @@ let rec random_walk (walk : int -> int list) (start : int) (num_steps : int) : d
       |> List.sort (fun (a, _) (b, _) -> compare a b)
     in
     combine_prob prev_distr
-
