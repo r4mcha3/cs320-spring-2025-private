@@ -36,7 +36,16 @@ let rec filter_map (f : 'a -> 'b option) (l : 'a list) : 'b list =
 let rec tree_filter (p : 'a -> bool) (t : 'a ntree) : 'a ntree option =
   match t with
   | Node (x, children) ->
-      let filtered_children = List.filter_map (tree_filter p) children in
+      let rec filter_map f lst =
+        match lst with
+        | [] -> []
+        | h :: t -> (
+            match f h with
+            | Some v -> v :: filter_map f t
+            | None -> filter_map f t
+          )
+      in
+      let filtered_children = filter_map (tree_filter p) children in
       if p x then
         Some (Node (x, filtered_children))
       else
@@ -44,6 +53,7 @@ let rec tree_filter (p : 'a -> bool) (t : 'a ntree) : 'a ntree option =
         | [] -> None
         | Node (lx, lchildren) :: rest ->
             Some (Node (lx, lchildren @ rest))
+    
       
 
 type rat = {
