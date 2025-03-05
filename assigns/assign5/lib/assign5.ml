@@ -62,17 +62,6 @@ let prefix_res k l =
     try Ok (prefix k l)
     with ListTooShort -> Error ListTooShort
 
-
-module type DEQUEUE = sig
-  type 'a t
-  val empty: 'a t
-  val push_front : 'a -> 'a t -> 'a t
-  val pop_front : 'a t -> ('a * 'a t) option
-  val push_back : 'a -> 'a t -> 'a t
-  val pop_back : 'a t -> ('a * 'a t) option
-  val to_list : 'a t -> 'a list
-end
-
 module type DEQUEUE = sig
   type 'a t
   val empty: 'a t
