@@ -84,6 +84,11 @@ module DoubleListDequeue = struct
   let to_list l = assert false
 end
 
+module StringOrd = struct
+  type t = string
+  let compare = String.compare
+end
+
 module StringMap = Map.Make(String)
 module IntMap = Map.Make(Int)
 module StringSet = Set.Make(String)
