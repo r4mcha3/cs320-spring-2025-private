@@ -116,16 +116,14 @@ module StringOrderedType = struct
   let compare = compare
 end
 
-module StringMap = Map.Make(StringOrderedType)
-
 module IntOrderedType = struct
   type t = int
   let compare = compare
 end
 
+module StringMap = Map.Make(StringOrderedType)
 module IntMap = Map.Make(IntOrderedType)
-
-module StringSet = Set.Make(String)
+module StringSet = Set.Make(StringOrderedType)
 
 let flip_keys_and_values (m : int StringMap.t) : StringSet.t IntMap.t =
   StringMap.fold (fun key value acc ->
