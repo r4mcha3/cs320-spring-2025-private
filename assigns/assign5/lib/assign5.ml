@@ -21,11 +21,12 @@ type 'a error =
     meta : 'a;
   }
 
-let guard b error = if b then Error error else Ok ()
+let guard b error : (unit, 'a error) Stdlib320.result =
+  if b then Error error else Ok ()
 
-let ( let* ) = Result.bind
+let ( let* ) = Stdlib320.Result.bind
 
-let rec eval (e : 'a expr) : (int, 'a error) result =
+let rec eval (e : 'a expr) : (int, 'a error) Stdlib320.result =
   match e.expr with
   | Num n -> Ok n
   | Op (op, left, right) ->
