@@ -111,8 +111,20 @@ module DoubleListDequeue : DEQUEUE with type 'a t = 'a list * 'a list = struct
 end
 
 
-module StringMap = Map.Make(String)
-module IntMap = Map.Make(Int)
+module StringOrderedType = struct
+  type t = string
+  let compare = compare
+end
+
+module StringMap = Map.Make(StringOrderedType)
+
+module IntOrderedType = struct
+  type t = int
+  let compare = compare
+end
+
+module IntMap = Map.Make(IntOrderedType)
+
 module StringSet = Set.Make(String)
 
 let flip_keys_and_values (m : int StringMap.t) : StringSet.t IntMap.t =
