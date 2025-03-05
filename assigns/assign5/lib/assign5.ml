@@ -21,50 +21,38 @@ type 'a error =
     meta : 'a;
   }
 
-type ('a, 'b) result = ('a, 'b) Stdlib320.result
+let guard b error = if b then Error error else Ok ()
 
-
-let guard b error : (unit, 'a error) Stdlib320.result =
-  if b then Error error else Ok ()
-
-let ( let* ) = Stdlib320.Result.bind
+let ( let* ) = Result.bind
 
 let rec eval (e : 'a expr) : (int, 'a error) result =
   match e.expr with
   | Num n -> Ok n
   | Op (op, left, right) ->
-    let* l_val = eval left in
-    let* r_val = eval right in
+    let* lval = eval left in
+    let* rval = eval right in
     match op with
-    | Add -> Ok (l_val + r_val)
-    | Sub -> Ok (l_val - r_val)
-    | Mul -> Ok (l_val * r_val)
+    | Add -> Ok (lval + rval)
+    | Sub -> Ok (lval - rval)
+    | Mul -> Ok (lval * rval)
     | Div ->
-      let* _ = guard (r_val = 0) { error = DivByZero; meta = e.meta } in
-      Ok (l_val / r_val)
+      let* _ = guard (rval = 0) { error = DivByZero; meta = e.meta } in
+      Ok (lval / rval)
     | Pow ->
-      let* _ = guard (r_val < 0) { error = NegExp; meta = e.meta } in
-      Ok (int_of_float (float_of_int l_val ** float_of_int r_val))
+      let* _ = guard (rval < 0) { error = NegExp; meta = e.meta } in
+      Ok (int_of_float ((float_of_int lval) ** (float_of_int rval)))
 
 exception ListTooShort
 exception InvalidArg
 
-let rec prefix k l =
-  if k < 0 then raise InvalidArg
-  else match (k, l) with
-    | (0, _) -> []
-    | (_, []) -> raise ListTooShort
-    | (n, x :: xs) -> x :: prefix (n - 1) xs
+let prefix (k : int) (l : 'a list) : 'a list = assert false
 
 type prefix_error =
   | ListTooShort
   | InvalidArg
 
-let prefix_res k l =
-  if k < 0 then Error InvalidArg
-  else
-    try Ok (prefix k l)
-    with ListTooShort -> Error ListTooShort
+let prefix_res (k : int) (l : 'a list) : ('a list, prefix_error) result =
+  assert false
 
 module type DEQUEUE = sig
   type 'a t
@@ -76,64 +64,29 @@ module type DEQUEUE = sig
   val to_list : 'a t -> 'a list
 end
 
-module ListDequeue : DEQUEUE with type 'a t = 'a list = struct
+module ListDequeue = struct
   type 'a t = 'a list
-  let empty = []
-  let push_front x l = x :: l
-  let pop_front = function
-    | [] -> None
-    | x :: xs -> Some (x, xs)
-  let push_back x l = l @ [x]
-  let rec pop_back = function
-    | [] -> None
-    | [x] -> Some (x, [])
-    | x :: xs ->
-      match pop_back xs with
-      | Some (y, ys) -> Some (y, x :: ys)
-      | None -> None
-  let to_list l = l
+  let empty = assert false
+  let push_front x l = assert false
+  let pop_front l = assert false
+  let push_back x l = assert false
+  let pop_back l = assert false
+  let to_list l = assert false
 end
 
-module DoubleListDequeue : DEQUEUE with type 'a t = 'a list * 'a list = struct
+module DoubleListDequeue = struct
   type 'a t = 'a list * 'a list
-  let empty = ([], [])
-  let push_front x (f, b) = (x :: f, b)
-  let push_back x (f, b) = (f, x :: b)
-  let balance (f, b) =
-    if List.length f >= List.length b then (f, b)
-    else (f @ List.rev b, [])
-  let rec pop_front = function
-  | [], [] -> None
-  | x :: xs, b -> Some (x, balance (xs, b))
-  | [], b -> pop_front (balance ([], b))  (* Recursive call needs 'rec' *)
-  let rec pop_back = function
-  | [], [] -> None
-  | f, x :: xs -> Some (x, balance (f, xs))
-  | f, [] -> pop_back (balance (f, []))  (* Recursive call needs 'rec' *)
-
-  let to_list (f, b) = f @ List.rev b
+  let empty = assert false
+  let push_front x l = assert false
+  let pop_front l = assert false
+  let push_back x l = assert false
+  let pop_back l = assert false
+  let to_list l = assert false
 end
 
-
-module StringOrderedType = struct
-  type t = string
-  let compare = compare
-end
-
-module IntOrderedType = struct
-  type t = int
-  let compare = compare
-end
-
-module StringMap = Map.Make(StringOrderedType)
-module IntMap = Map.Make(IntOrderedType)
-module StringSet = Set.Make(StringOrderedType)
+module StringMap = Map.Make(String)
+module IntMap = Map.Make(Int)
+module StringSet = Set.Make(String)
 
 let flip_keys_and_values (m : int StringMap.t) : StringSet.t IntMap.t =
-  StringMap.fold (fun key value acc ->
-    let existing_set = match IntMap.find_opt value acc with
-      | Some s -> s
-      | None -> StringSet.empty
-    in
-    IntMap.add value (StringSet.add key existing_set) acc
-  ) m IntMap.empty
+  assert false
