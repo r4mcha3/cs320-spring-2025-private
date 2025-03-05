@@ -90,7 +90,7 @@ module StringOrd = struct
     if s1 < s2 then -1 else if s1 > s2 then 1 else 0
 end
 
-module StringMap = Map.Make(String)
+module StringMap = Map.Make(StringOrd)
 module IntMap = Map.Make(Int)
 module StringSet = Set.Make(String)
 
