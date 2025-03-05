@@ -98,14 +98,15 @@ module DoubleListDequeue : DEQUEUE with type 'a t = 'a list * 'a list = struct
   let balance (f, b) =
     if List.length f >= List.length b then (f, b)
     else (f @ List.rev b, [])
-  let pop_front = function
-    | [], [] -> None
-    | x :: xs, b -> Some (x, balance (xs, b))
-    | [], b -> pop_front (balance ([], b))
-  let pop_back = function
-    | [], [] -> None
-    | f, x :: xs -> Some (x, balance (f, xs))
-    | f, [] -> pop_back (balance (f, []))
+  let rec pop_front = function
+  | [], [] -> None
+  | x :: xs, b -> Some (x, balance (xs, b))
+  | [], b -> pop_front (balance ([], b))  (* Recursive call needs 'rec' *)
+  let rec pop_back = function
+  | [], [] -> None
+  | f, x :: xs -> Some (x, balance (f, xs))
+  | f, [] -> pop_back (balance (f, []))  (* Recursive call needs 'rec' *)
+
   let to_list (f, b) = f @ List.rev b
 end
 
