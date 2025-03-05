@@ -86,7 +86,8 @@ end
 
 module StringOrd = struct
   type t = string
-  let compare = String.compare
+  let compare (s1 : string) (s2 : string) : int =
+    if s1 < s2 then -1 else if s1 > s2 then 1 else 0
 end
 
 module StringMap = Map.Make(String)
