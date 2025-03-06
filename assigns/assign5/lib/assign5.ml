@@ -21,11 +21,14 @@ type 'a error =
     meta : 'a;
   }
 
+type ('a, 'b) result = ('a, 'b) Stdlib320.result
+
+
 let guard b error = if b then Error error else Ok ()
 
 let ( let* ) = Result.bind
 
-let rec eval (e : 'a expr) : (int, 'a error) Stdlib320.result =
+let rec eval (e : 'a expr) : (int, 'a error) result =
   match e.expr with
   | Num n -> Ok n
   | Op (op, left, right) ->
