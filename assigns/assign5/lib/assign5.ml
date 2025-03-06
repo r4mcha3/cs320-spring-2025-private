@@ -88,32 +88,38 @@ end
 module DoubleListDequeue : DEQUEUE with type 'a t = 'a list * 'a list = struct
   type 'a t = 'a list * 'a list
   let empty = ([], [])
+
   let push_front x (front, back) = (x :: front, back)
+
   let push_back x (front, back) = (front, x :: back)
-  
+
   let balance (front, back) =
     let len_f = List.length front in
     let len_b = List.length back in
-    if len_f >= len_b then (front, back)
-    else (front @ List.rev back, [])
+    if abs (len_f - len_b) <= 1 then (front, back)
+    else
+      let combined = front @ List.rev back in
+      let mid = List.length combined / 2 in
+      let new_front, new_back = List.split_at mid combined in
+      (new_front, List.rev new_back)
 
   let rec pop_front = function
-  | [], [] -> None
-  | x :: xs, back -> Some (x, balance (xs, back))
-  | [], back -> 
-    let balanced = balance ([], back) in
-    pop_front balanced 
+    | [], [] -> None
+    | x :: xs, back -> Some (x, balance (xs, back))
+    | [], back -> 
+      let balanced = balance ([], back) in
+      pop_front balanced 
 
   let rec pop_back = function
-  | [], [] -> None
-  | front, x :: xs -> Some (x, balance (front, xs))
-  | front, [] -> 
-    let balanced = balance (front, []) in
-    pop_back balanced 
+    | [], [] -> None
+    | front, x :: xs -> Some (x, balance (front, xs))
+    | front, [] -> 
+      let balanced = balance (front, []) in
+      pop_back balanced 
 
-  
   let to_list (front, back) = front @ List.rev back
 end
+
 
 
 module StringMap = Map.Make(String)
