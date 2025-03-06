@@ -28,26 +28,18 @@ let eval (e : 'a expr) : (int, 'a error) result =
     match e.expr with
     | Num n -> Ok n
     | Op (op, e1, e2) ->
-      (* Evaluate e1 first *)
-      match eval_expr e1 with
-      | Error err -> Error err  (* Immediately return the first encountered error *)
-      | Ok v1 -> (
-          (* Evaluate e2 only if e1 succeeds *)
-          match eval_expr e2 with
-          | Error err -> Error err
-          | Ok v2 -> (
-              match op with
-              | Add -> Ok (v1 + v2)
-              | Sub -> Ok (v1 - v2)
-              | Mul -> Ok (v1 * v2)
-              | Div -> 
-                if v2 = 0 then Error { error = DivByZero; meta = e2.meta }
-                else Ok (v1 / v2)
-              | Pow -> 
-                if v2 < 0 then Error { error = NegExp; meta = e2.meta }
-                else Ok (int_of_float (float_of_int v1 ** float_of_int v2))
-            )
-        )
+      let* v1 = eval_expr e1 in
+      let* v2 = eval_expr e2 in
+      match op with
+      | Add -> Ok (v1 + v2)
+      | Sub -> Ok (v1 - v2)
+      | Mul -> Ok (v1 * v2)
+      | Div -> 
+        if v2 = 0 then Error { error = DivByZero; meta = e2.meta }
+        else Ok (v1 / v2)
+      | Pow -> 
+        if v2 < 0 then Error { error = NegExp; meta = e2.meta }
+        else Ok (int_of_float (float_of_int v1 ** float_of_int v2))
   in
   eval_expr e
 
