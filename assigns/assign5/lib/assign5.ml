@@ -97,14 +97,14 @@ module DoubleListDequeue : DEQUEUE with type 'a t = 'a list * 'a list = struct
     if len_f >= len_b then (front, back)
     else (front @ List.rev back, [])
 
-  let rec pop_front = function
+  let pop_front = function
   | [], [] -> None
   | x :: xs, back -> Some (x, balance (xs, back))
   | [], back -> 
     let balanced = balance ([], back) in
     pop_front balanced 
 
-  and pop_back = function
+  let pop_back = function
   | [], [] -> None
   | front, x :: xs -> Some (x, balance (front, xs))
   | front, [] -> 
