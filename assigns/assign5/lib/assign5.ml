@@ -97,7 +97,7 @@ end
 
 module StringMap = Map.Make(StringOrd)
 module IntMap = Map.Make(IntOrd)
-module StringSet = Set.Make(String)
+module StringSet = Set.Make(StringOrd)
 
 let flip_keys_and_values (m : int StringMap.t) : StringSet.t IntMap.t =
   assert false
