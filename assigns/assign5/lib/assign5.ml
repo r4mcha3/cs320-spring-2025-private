@@ -28,8 +28,8 @@ let eval (e : 'a expr) : (int, 'a error) result =
     match e.expr with
     | Num n -> Ok n
     | Op (op, e1, e2) ->
-      let* v1 = eval_expr e1 in
-      let* v2 = eval_expr e2 in
+      let* v1 = eval_expr e1 in  (* First evaluate e1 *)
+      let* v2 = eval_expr e2 in  (* Only evaluate e2 if e1 succeeded *)
       match op with
       | Add -> Ok (v1 + v2)
       | Sub -> Ok (v1 - v2)
