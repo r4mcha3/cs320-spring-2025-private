@@ -90,8 +90,13 @@ module StringOrd = struct
     if s1 < s2 then -1 else if s1 > s2 then 1 else 0
 end
 
+module IntOrd = struct
+  type t = int
+  let compare = compare  (* OCaml's built-in compare function *)
+end
+
 module StringMap = Map.Make(StringOrd)
-module IntMap = Map.Make(Int)
+module IntMap = Map.Make(IntOrd)
 module StringSet = Set.Make(String)
 
 let flip_keys_and_values (m : int StringMap.t) : StringSet.t IntMap.t =
