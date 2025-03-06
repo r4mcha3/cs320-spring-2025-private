@@ -75,11 +75,11 @@ module ListDequeue : DEQUEUE with type 'a t = 'a list = struct
   type 'a t = 'a list
   let empty = []
   let push_front x l = x :: l
-  let rec pop_front = function
+  let pop_front = function
     | [] -> None
     | x :: xs -> Some (x, xs)
   let push_back x l = l @ [x]
-  let rec pop_back = function
+  let pop_back = function
     | [] -> None
     | l -> Some (List.hd (List.rev l), List.rev (List.tl (List.rev l)))
   let to_list l = l
