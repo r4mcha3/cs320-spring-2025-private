@@ -35,11 +35,11 @@ let eval (e : 'a expr) : (int, 'a error) result =
       | Sub -> Ok (v1 - v2)
       | Mul -> Ok (v1 * v2)
       | Div -> 
-        let* _ = guard (v2 = 0) { error = DivByZero; meta = e2.meta } in
-        Ok (v1 / v2)
+        if v2 = 0 then Error { error = DivByZero; meta = e2.meta }
+        else Ok (v1 / v2)
       | Pow -> 
-        let* _ = guard (v2 < 0) { error = NegExp; meta = e2.meta } in
-        Ok (int_of_float (float_of_int v1 ** float_of_int v2))
+        if v2 < 0 then Error { error = NegExp; meta = e2.meta }
+        else Ok (int_of_float (float_of_int v1 ** float_of_int v2))
   in
   eval_expr e
 
