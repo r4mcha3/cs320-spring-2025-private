@@ -93,6 +93,14 @@ module DoubleListDequeue : DEQUEUE with type 'a t = 'a list * 'a list = struct
 
   let push_back x (front, back) = (front, x :: back)
 
+  let rec split_at n lst =
+    if n <= 0 then ([], lst)
+    else match lst with
+      | [] -> ([], [])
+      | x :: xs -> 
+        let first_part, second_part = split_at (n - 1) xs in
+        (x :: first_part, second_part)
+
   let balance (front, back) =
     let len_f = List.length front in
     let len_b = List.length back in
@@ -100,7 +108,7 @@ module DoubleListDequeue : DEQUEUE with type 'a t = 'a list * 'a list = struct
     else
       let combined = front @ List.rev back in
       let mid = List.length combined / 2 in
-      let new_front, new_back = List.split_at mid combined in
+      let new_front, new_back = split_at mid combined in
       (new_front, List.rev new_back)
 
   let rec pop_front = function
