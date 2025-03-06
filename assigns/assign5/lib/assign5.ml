@@ -1,5 +1,3 @@
-open Stdlib320
-
 type op = Add | Sub | Mul | Div | Pow
 
 type 'a expr =
@@ -21,29 +19,10 @@ type 'a error =
     meta : 'a;
   }
 
-type ('a, 'b) result = ('a, 'b) Stdlib320.result
-
-
 let guard b error = if b then Error error else Ok ()
 
-let ( let* ) = Result.bind
-
-let rec eval (e : 'a expr) : (int, 'a error) Stdlib320.result =
-  match e.expr with
-  | Num n -> Ok n
-  | Op (op, left, right) ->
-    let* lval = eval left in
-    let* rval = eval right in
-    match op with
-    | Add -> Ok (lval + rval)
-    | Sub -> Ok (lval - rval)
-    | Mul -> Ok (lval * rval)
-    | Div ->
-      let* _ = guard (rval = 0) { error = DivByZero; meta = e.meta } in
-      Ok (lval / rval)
-    | Pow ->
-      let* _ = guard (rval < 0) { error = NegExp; meta = e.meta } in
-      Ok (int_of_float ((float_of_int lval) ** (float_of_int rval)))
+let eval (e : 'a expr) : (int, 'a error) result =
+  assert false
 
 exception ListTooShort
 exception InvalidArg
@@ -87,20 +66,9 @@ module DoubleListDequeue = struct
   let to_list l = assert false
 end
 
-module StringOrd = struct
-  type t = string
-  let compare (s1 : string) (s2 : string) : int =
-    if s1 < s2 then -1 else if s1 > s2 then 1 else 0
-end
-
-module IntOrd = struct
-  type t = int
-  let compare = compare  (* OCaml's built-in compare function *)
-end
-
-module StringMap = Map.Make(StringOrd)
-module IntMap = Map.Make(IntOrd)
-module StringSet = Set.Make(StringOrd)
+module StringMap = Map.Make(String)
+module IntMap = Map.Make(Int)
+module StringSet = Set.Make(String)
 
 let flip_keys_and_values (m : int StringMap.t) : StringSet.t IntMap.t =
   assert false
