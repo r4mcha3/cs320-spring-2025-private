@@ -1,3 +1,6 @@
+type ty = 
+  | TInt
+  | TBool
 
 type tok =
   | LParen
