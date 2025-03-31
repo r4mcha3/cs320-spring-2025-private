@@ -117,14 +117,14 @@ let rec eval (e : expr) : (value, error) result =
       | Ok _ -> Error InvalidIfCond
       | Error err -> Error err
       end
-  | Let (x, e1, e2) ->
+  | Let (_x, e1, e2) ->
       begin match eval e1 with
       | Ok v1 ->
           let e2' = subst v1 x e2 in
           eval e2'
       | Error err -> Error err
       end
-  | Fun (x, body) -> Ok (VFun (x, body))
+  | Fun (_x, body) -> Ok (VFun (x, body))
   | App (e1, e2) ->
       begin match eval e1 with
       | Ok (VFun (x, body)) ->
@@ -159,11 +159,11 @@ let interp (s : string) : (value, error) result =
              match check_free e2 with
              | Some x -> Some x
              | None -> check_free e3)
-      | Let (x, e1, e2) ->
+      | Let (_x, e1, e2) ->
           (match check_free e1 with
            | Some y -> Some y
            | None -> check_free e2)
-      | Fun (x, body) -> check_free body
+      | Fun (_x, body) -> check_free body
     in
     match check_free e with
     | Some x -> Error (UnknownVar x)
