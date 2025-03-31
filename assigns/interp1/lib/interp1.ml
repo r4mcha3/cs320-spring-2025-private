@@ -69,9 +69,9 @@ let rec eval (e : expr) : (value, error) result =
     | Ok (VBool true) ->
         (match eval e2 with
          | Ok (VBool b) -> Ok (VBool b)
-         | Ok _ -> Error (InvalidArgs "expected boolean operand")
+         | Ok _ -> Error (InvalidArgs And)
          | Error err -> Error err)
-    | Ok _ -> Error (InvalidArgs "expected boolean operand")
+    | Ok _ -> Error (InvalidArgs And)
     | Error err -> Error err
   in
 
@@ -81,9 +81,9 @@ let rec eval (e : expr) : (value, error) result =
     | Ok (VBool false) ->
         (match eval e2 with
          | Ok (VBool b) -> Ok (VBool b)
-         | Ok _ -> Error (InvalidArgs "expected boolean operand")
+         | Ok _ -> Error (InvalidArgs Or)
          | Error err -> Error err)
-    | Ok _ -> Error (InvalidArgs "expected boolean operand")
+    | Ok _ -> Error (InvalidArgs Or)
     | Error err -> Error err
   in
 
