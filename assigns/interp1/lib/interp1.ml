@@ -29,7 +29,7 @@ let rec eval (e : expr) : (value, error) result =
   let int_binop op e1 e2 =
     match eval e1, eval e2 with
     | Ok (VNum n1), Ok (VNum n2) -> Ok (VNum (op n1 n2))
-    | Ok _, Ok _ -> Error InvalidArgs
+    | Ok _, Ok _ -> Error (InvalidArgs "expected two integers")
     | Error err, _ | _, Error err -> Error err
   in
 
@@ -37,14 +37,14 @@ let rec eval (e : expr) : (value, error) result =
     match eval e1, eval e2 with
     | Ok (VNum _), Ok (VNum 0) -> Error DivByZero
     | Ok (VNum n1), Ok (VNum n2) -> Ok (VNum (div_op n1 n2))
-    | Ok _, Ok _ -> Error InvalidArgs
+    | Ok _, Ok _ -> Error (InvalidArgs "expected two integers")
     | Error err, _ | _, Error err -> Error err
   in
 
   let compare_binop cmp e1 e2 =
     match eval e1, eval e2 with
     | Ok (VNum n1), Ok (VNum n2) -> Ok (VBool (cmp n1 n2))
-    | Ok _, Ok _ -> Error InvalidArgs
+    | Ok _, Ok _ -> Error (InvalidArgs "expected two integers")
     | Error err, _ | _, Error err -> Error err
   in
 
@@ -166,4 +166,3 @@ let interp (s : string) : (value, error) result =
     match check_free e with
     | Some x -> Error (UnknownVar x)
     | None -> eval e
- 
