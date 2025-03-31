@@ -26,26 +26,26 @@ let rec subst (v : value) (x : string) (e : expr) : expr =
 
 
 let rec eval (e : expr) : (value, error) result =
-  let int_binop op e1 e2 =
+  let int_binop b op e1 e2 =
     match eval e1, eval e2 with
     | Ok (VNum n1), Ok (VNum n2) -> Ok (VNum (op n1 n2))
-    | Ok _, Ok _ -> Error (InvalidArgs "expected integer operands")
-    | Error err, _ | _, Error err -> Error err
+    | Ok _, Ok _ -> Error (InvalidArgs b)
+    | Error err, _ | _, Error err -> Error err  
   in
 
-  let safe_div e1 e2 div_op =
+  let safe_div b e1 e2 div_op =
     match eval e1, eval e2 with
     | Ok (VNum _), Ok (VNum 0) -> Error DivByZero
     | Ok (VNum n1), Ok (VNum n2) -> Ok (VNum (div_op n1 n2))
-    | Ok _, Ok _ -> Error (InvalidArgs "expected integer operands")
-    | Error err, _ | _, Error err -> Error err
+    | Ok _, Ok _ -> Error (InvalidArgs b)
+    | Error err, _ | _, Error err -> Error err  
   in
 
-  let compare_binop cmp e1 e2 =
+  let compare_binop b cmp e1 e2 =
     match eval e1, eval e2 with
     | Ok (VNum n1), Ok (VNum n2) -> Ok (VBool (cmp n1 n2))
-    | Ok _, Ok _ -> Error (InvalidArgs "expected integer operands")
-    | Error err, _ | _, Error err -> Error err
+    | Ok _, Ok _ -> Error (InvalidArgs b)
+    | Error err, _ | _, Error err -> Error err  
   in
 
   let eq_binop e1 e2 =
@@ -94,21 +94,22 @@ let rec eval (e : expr) : (value, error) result =
   | Unit -> Ok VUnit
   | Var _ -> Error (UnknownVar "unexpected variable during evaluation")
   | Bop (b, e1, e2) ->
-      begin match b with
-      | Add -> int_binop ( + ) e1 e2
-      | Sub -> int_binop ( - ) e1 e2
-      | Mul -> int_binop ( * ) e1 e2
-      | Div -> safe_div e1 e2 ( / )
-      | Mod -> safe_div e1 e2 ( mod )
-      | Lt  -> compare_binop ( < ) e1 e2
-      | Lte -> compare_binop ( <= ) e1 e2
-      | Gt  -> compare_binop ( > ) e1 e2
-      | Gte -> compare_binop ( >= ) e1 e2
-      | Eq  -> eq_binop e1 e2
-      | Neq -> neq_binop e1 e2
-      | And -> and_op e1 e2
-      | Or  -> or_op e1 e2
-      end
+    begin match b with
+    | Add -> int_binop Add ( + ) e1 e2
+    | Sub -> int_binop Sub ( - ) e1 e2
+    | Mul -> int_binop Mul ( * ) e1 e2
+    | Div -> safe_div Div e1 e2 ( / )
+    | Mod -> safe_div Mod e1 e2 ( mod )
+    | Lt  -> compare_binop Lt ( < ) e1 e2
+    | Lte -> compare_binop Lte ( <= ) e1 e2
+    | Gt  -> compare_binop Gt ( > ) e1 e2
+    | Gte -> compare_binop Gte ( >= ) e1 e2
+    | Eq  -> eq_binop e1 e2
+    | Neq -> neq_binop e1 e2
+    | And -> and_op e1 e2
+    | Or  -> or_op e1 e2
+    end
+
   | If (e1, e2, e3) ->
       begin match eval e1 with
       | Ok (VBool true) -> eval e2
