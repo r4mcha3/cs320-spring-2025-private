@@ -124,7 +124,7 @@ let rec eval (e : expr) : (value, error) result =
           eval e2'
       | Error err -> Error err
       end
-  | Fun (_x, body) -> Ok (VFun (x, body))
+  | Fun (x, body) -> Ok (VFun (x, body))
   | App (e1, e2) ->
       begin match eval e1 with
       | Ok (VFun (x, body)) ->
