@@ -29,7 +29,7 @@ let rec eval (e : expr) : (value, error) result =
   let int_binop op e1 e2 =
     match eval e1, eval e2 with
     | Ok (VNum n1), Ok (VNum n2) -> Ok (VNum (op n1 n2))
-    | Ok _, Ok _ -> Error (InvalidArgs "expected two integers")
+    | Ok _, Ok _ -> Error (InvalidArgs "expected integer operands")
     | Error err, _ | _, Error err -> Error err
   in
 
@@ -37,14 +37,14 @@ let rec eval (e : expr) : (value, error) result =
     match eval e1, eval e2 with
     | Ok (VNum _), Ok (VNum 0) -> Error DivByZero
     | Ok (VNum n1), Ok (VNum n2) -> Ok (VNum (div_op n1 n2))
-    | Ok _, Ok _ -> Error (InvalidArgs "expected two integers")
+    | Ok _, Ok _ -> Error (InvalidArgs "expected integer operands")
     | Error err, _ | _, Error err -> Error err
   in
 
   let compare_binop cmp e1 e2 =
     match eval e1, eval e2 with
     | Ok (VNum n1), Ok (VNum n2) -> Ok (VBool (cmp n1 n2))
-    | Ok _, Ok _ -> Error (InvalidArgs "expected two integers")
+    | Ok _, Ok _ -> Error (InvalidArgs "expected integer operands")
     | Error err, _ | _, Error err -> Error err
   in
 
@@ -69,9 +69,9 @@ let rec eval (e : expr) : (value, error) result =
     | Ok (VBool true) ->
         (match eval e2 with
          | Ok (VBool b) -> Ok (VBool b)
-         | Ok _ -> Error InvalidArgs
+         | Ok _ -> Error (InvalidArgs "expected boolean operand")
          | Error err -> Error err)
-    | Ok _ -> Error InvalidArgs
+    | Ok _ -> Error (InvalidArgs "expected boolean operand")
     | Error err -> Error err
   in
 
@@ -81,9 +81,9 @@ let rec eval (e : expr) : (value, error) result =
     | Ok (VBool false) ->
         (match eval e2 with
          | Ok (VBool b) -> Ok (VBool b)
-         | Ok _ -> Error InvalidArgs
+         | Ok _ -> Error (InvalidArgs "expected boolean operand")
          | Error err -> Error err)
-    | Ok _ -> Error InvalidArgs
+    | Ok _ -> Error (InvalidArgs "expected boolean operand")
     | Error err -> Error err
   in
 
@@ -92,7 +92,7 @@ let rec eval (e : expr) : (value, error) result =
   | True -> Ok (VBool true)
   | False -> Ok (VBool false)
   | Unit -> Ok VUnit
-  | Var _ -> Error (UnknownVar "unexpected var during eval")
+  | Var _ -> Error (UnknownVar "unexpected variable during evaluation")
   | Bop (b, e1, e2) ->
       begin match b with
       | Add -> int_binop ( + ) e1 e2
@@ -136,6 +136,7 @@ let rec eval (e : expr) : (value, error) result =
       | Ok _ -> Error InvalidApp
       | Error err -> Error err
       end
+
 
 
 let interp (s : string) : (value, error) result =
