@@ -22,7 +22,6 @@ open Utils
 %nonassoc LT LE GT GE EQ NEQ
 %left PLUS MINUS
 %left TIMES DIVIDE MOD
-%left APP
 
 %%
 
@@ -49,7 +48,7 @@ expr1:
   | expr1 TIMES expr1               { Bop (Mul, $1, $3) }
   | expr1 DIVIDE expr1              { Bop (Div, $1, $3) }
   | expr1 MOD expr1                 { Bop (Mod, $1, $3) }
-  | expr1 expr2 %prec APP           { App ($1, $2) }
+  | expr1 expr2                     { App ($1, $2) }
   | expr2                           { $1 }
 
 expr2:
