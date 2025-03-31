@@ -117,7 +117,7 @@ let rec eval (e : expr) : (value, error) result =
       | Ok _ -> Error InvalidIfCond
       | Error err -> Error err
       end
-  | Let (_x, e1, e2) ->
+  | Let (x, e1, e2) ->
       begin match eval e1 with
       | Ok v1 ->
           let e2' = subst v1 x e2 in
