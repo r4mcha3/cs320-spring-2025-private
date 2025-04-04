@@ -32,7 +32,12 @@ prog:
 expr:
   | IF expr THEN expr ELSE expr         { If ($2, $4, $6) }
   | LET VAR EQ expr IN expr             { Let ($2, $4, $6) }
-  | LET REC VAR EQ expr IN expr { (App (Fun ($3, Let ($3, $5, Var $3)), $6)) }
+  | LET REC VAR EQ expr IN expr   { 
+    Let ($3, App (Var "fix", Fun ($3, $5)), $7) 
+  }
+  | LET VAR EQ expr IN expr       { 
+    Let ($2, $4, $6) 
+  }
   | FUN VAR ARROW expr                  { Fun ($2, $4) }
   | expr1                               { $1 }
 
