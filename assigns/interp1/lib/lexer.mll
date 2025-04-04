@@ -1,9 +1,6 @@
 {
 open Parser
-
-exception Error of string
 }
-%token REC
 
 let whitespace = [' ' '\t' '\n' '\r']+
 let num = '-'? ['0'-'9']+
@@ -12,6 +9,8 @@ let var = ['a'-'z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_' '\'']*
 rule read =
   parse
   | whitespace { read lexbuf }
+
+  (* Keywords *)
   | "true"     { TRUE }
   | "false"    { FALSE }
   | "()"       { UNIT }
@@ -19,12 +18,12 @@ rule read =
   | "then"     { THEN }
   | "else"     { ELSE }
   | "let"      { LET }
+  | "rec"      { REC }  
   | "in"       { IN }
   | "fun"      { FUN }
   | "->"       { ARROW }
-  | "rec"      { REC }
 
-  (* Binary ops *)
+  (* Operators *)
   | "+"        { PLUS }
   | "-"        { MINUS }
   | "*"        { TIMES }
@@ -47,4 +46,4 @@ rule read =
 
   | eof        { EOF }
 
-  | _ as c     { raise (Error ("Unexpected character: " ^ String.make 1 c)) }
+  | _ as c     { failwith ("Unexpected character: " ^ String.make 1 c) }
