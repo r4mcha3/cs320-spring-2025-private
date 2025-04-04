@@ -21,6 +21,7 @@ rule read =
   | "in"       { IN }
   | "fun"      { FUN }
   | "->"       { ARROW }
+  | "rec"      { REC }
 
   (* Binary ops *)
   | "+"        { PLUS }
