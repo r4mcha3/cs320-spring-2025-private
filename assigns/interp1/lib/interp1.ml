@@ -1,5 +1,6 @@
 include Utils
 
+module StringSet = Set.Make(String)
 let parse (s : string) : expr option =
   match Parser.prog Lexer.read (Lexing.from_string s) with
   | e -> Some e
@@ -144,27 +145,27 @@ let interp (s : string) : (value, error) result =
   match parse s with
   | None -> Error ParseFail
   | Some e ->
-    let rec check_free e =
+    let rec check_free (e : expr) (bound : StringSet.t) : string option =
       match e with
-      | Var x -> Some x
+      | Var x -> if StringSet.mem x bound then None else Some x
       | Num _ | True | False | Unit -> None
       | Bop (_, e1, e2) | App (e1, e2) ->
-          (match check_free e1 with
+          (match check_free e1 bound with
            | Some x -> Some x
-           | None -> check_free e2)
+           | None -> check_free e2 bound)
       | If (e1, e2, e3) ->
-          (match check_free e1 with
+          (match check_free e1 bound with
            | Some x -> Some x
            | None ->
-             match check_free e2 with
+             match check_free e2 bound with
              | Some x -> Some x
-             | None -> check_free e3)
-      | Let (_x, e1, e2) ->
-          (match check_free e1 with
+             | None -> check_free e3 bound)
+      | Let (x, e1, e2) ->
+          (match check_free e1 bound with
            | Some y -> Some y
-           | None -> check_free e2)
-      | Fun (_x, body) -> check_free body
+           | None -> check_free e2 (StringSet.add x bound))
+      | Fun (x, body) -> check_free body (StringSet.add x bound)    
     in
-    match check_free e with
+    match check_free e StringSet.empty with
     | Some x -> Error (UnknownVar x)
-    | None -> eval e
+    | None -> eval e    
