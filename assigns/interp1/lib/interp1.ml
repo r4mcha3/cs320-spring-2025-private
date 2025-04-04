@@ -27,6 +27,16 @@ let rec subst (v : value) (x : string) (e : expr) : expr =
 
 
 let rec eval (e : expr) : (value, error) result =
+
+ let fix =
+   VFun ("f",
+     App (
+       Fun ("x", App (Var "f", Fun ("v", App (App (Var "x", Var "x"), Var "v")))),
+       Fun ("x", App (Var "f", Fun ("v", App (App (Var "x", Var "x"), Var "v"))))
+     )
+   )
+  in
+  
   let int_binop b op e1 e2 =
     match eval e1, eval e2 with
     | Ok (VNum n1), Ok (VNum n2) -> Ok (VNum (op n1 n2))
@@ -89,6 +99,7 @@ let rec eval (e : expr) : (value, error) result =
   in
 
   match e with
+  | Var "fix" -> Ok fix
   | Num n -> Ok (VNum n)
   | True -> Ok (VBool true)
   | False -> Ok (VBool false)
