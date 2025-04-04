@@ -8,12 +8,12 @@ open Utils
 %token IF THEN ELSE
 %token LET IN
 %token FUN ARROW
+%token REC
 %token PLUS MINUS TIMES DIVIDE MOD
 %token LT LE GT GE EQ NEQ
 %token AND OR
 %token LPAREN RPAREN
 %token EOF
-%token REC
 
 %start <Utils.prog> prog
 %type <expr> expr
