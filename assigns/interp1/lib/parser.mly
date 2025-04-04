@@ -13,6 +13,7 @@ open Utils
 %token AND OR
 %token LPAREN RPAREN
 %token EOF
+%token REC
 
 %start <Utils.prog> prog
 %type <expr> expr
