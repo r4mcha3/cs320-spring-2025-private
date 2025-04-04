@@ -3,6 +3,7 @@ open Parser
 
 exception Error of string
 }
+%token REC
 
 let whitespace = [' ' '\t' '\n' '\r']+
 let num = '-'? ['0'-'9']+
