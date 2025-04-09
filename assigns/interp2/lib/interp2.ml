@@ -69,16 +69,16 @@ let rec typecheck (env : (string * ty) list) (e : expr) : (ty, error) result =
       | Ok t -> Error (AssertTyErr t)
       | Error err -> Error err)
   | If (e1, e2, e3) ->
-      (match typecheck env e1 with
-      | Ok BoolTy ->
-          (match typecheck env e2 with
+    (match typecheck env e1 with
+     | Ok BoolTy ->
+         (match typecheck env e2 with
           | Ok t1 ->
               (match typecheck env e3 with
-              | Ok t2 -> if t1 = t2 then Ok t1 else Error (IfTyErr t1 t2)
-              | Error err -> Error err)
+               | Ok t2 -> if t1 = t2 then Ok t1 else Error (IfTyErr t1 t2)
+               | Error err -> Error err)
           | Error err -> Error err)
-      | Ok t -> Error (IfCondTyErr t)
-      | Error err -> Error err)
+     | Ok t -> Error (IfCondTyErr t)
+     | Error err -> Error err)
   | Bop (op, e1, e2) -> typecheck_binop env op e1 e2
   | Fun (x, ty_x, body) ->
       (match typecheck ((x, ty_x) :: env) body with
