@@ -165,7 +165,7 @@ let rec eval_expr (env : (string * value) list) (e : expr) : value =
       let v1 = eval_expr env e1 in
       let v2 = eval_expr env e2 in
       eval_binop op v1 v2
-  | Fun (x, _, body) -> VClos (env, x, body)
+  | Fun (x, _, body) -> VClos { arg = x; body = body; env = env; name = None }
   | App (e1, e2) ->
       let v1 = eval_expr env e1 in
       let v2 = eval_expr env e2 in
