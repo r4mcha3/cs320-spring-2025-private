@@ -196,21 +196,24 @@ let rec eval_expr (env : (string * value) list) (e : expr) : value =
            let clos_env_list = Env.bindings clos_env in
            eval_expr ((x, v2) :: (f, rec_clos) :: clos_env_list) body
        | _ -> failwith "application to non-function")
-  | Let { is_rec = false; name = x; binding = e1; body = e2; _ } ->
-      let v1 = eval_expr env e1 in
-      eval_expr ((x, v1) :: env) e2
-  | Let { is_rec = true; name = f; binding = e1; body = e2; _ } ->
-      match e1 with
-      | Fun (x, _, body) ->
-          let clos_env = List.to_seq env |> Env.of_seq in
-          let rec_clos = VClos {
-            arg = x;
-            body = body;
-            env = clos_env;
-            name = Some f;
-          } in
-          eval_expr ((f, rec_clos) :: env) e2
-      | _ -> failwith "let rec must bind a function"
+  | Let { is_rec = false; name = x; ty = ty_x; binding = e1; body = e2 } ->
+    (match typecheck env e1 with
+     | Ok t1 ->
+         if t1 = ty_x
+         then typecheck ((x, ty_x) :: env) e2
+         else Error (LetTyErr (ty_x, t1))
+     | Error err -> Error err)
+
+  | Let { is_rec = true; name = f; ty = ty_f; binding = e1; body = e2 } ->
+    (match e1 with
+     | Fun (x, ty_x, body_fun) ->
+         let env' = (f, ty_f) :: env in
+         (match typecheck env' e1 with
+          | Ok t1 -> if t1 = ty_f
+                     then typecheck env' e2
+                     else Error (LetTyErr (ty_f, t1))
+          | Error err -> Error err)
+     | _ -> Error (LetRecErr f))
 
 and eval (e : expr) : value =
   eval_expr [] e
