@@ -172,14 +172,17 @@ let rec eval_expr (env : (string * value) list) (e : expr) : value =
     name = None;
   }
   | App (e1, e2) ->
-      let v1 = eval_expr env e1 in
-      let v2 = eval_expr env e2 in
-      (match v1 with
-      | VClos { arg = x; body = body; env = env'; name = _ } -> eval_expr ((x, v2) :: env') body
-      | VRecClos (env', f, x, body) ->
-          let env'' = (x, v2) :: (f, v1) :: env' in
-          eval_expr env'' body
-      | _ -> failwith "non-function application")
+     let v1 = eval_expr env e1 in
+     let v2 = eval_expr env e2 in
+     match v1 with
+     | VClos { arg = x; body = body; env = clos_env; name = _ } ->
+        let new_env = (x, v2) :: Env.bindings clos_env in
+        eval_expr new_env body
+     | VRecClos { arg = x; body = body; env = clos_env; name = Some f } ->
+        let rec_clos = VRecClos { arg = x; body = body; env = clos_env; name = Some f } in
+        let new_env = (x, v2) :: (f, rec_clos) :: Env.bindings clos_env in
+        eval_expr new_env body
+     | _ -> failwith "non-function application"
   | Let { is_rec = false; name = x; binding = e1; body = e2; _ } ->
       let v1 = eval_expr env e1 in
       eval_expr ((x, v1) :: env) e2
