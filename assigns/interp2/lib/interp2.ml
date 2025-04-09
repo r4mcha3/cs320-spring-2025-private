@@ -175,7 +175,7 @@ let rec eval_expr (env : (string * value) list) (e : expr) : value =
       let v1 = eval_expr env e1 in
       let v2 = eval_expr env e2 in
       (match v1 with
-      | VClos (env', x, body) -> eval_expr ((x, v2) :: env') body
+      | VClos { arg = x; body = body; env = env'; name = _ } -> eval_expr ((x, v2) :: env') body
       | VRecClos (env', f, x, body) ->
           let env'' = (x, v2) :: (f, v1) :: env' in
           eval_expr env'' body
