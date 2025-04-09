@@ -98,11 +98,11 @@ let rec typecheck (env : (string * ty) list) (e : expr) : (ty, error) result =
           | Error err -> Error err)
       | Ok t -> Error (FunAppTyErr t)
       | Error err -> Error err)
-  | Let (x, false, ty_x, e1, e2) ->
+  | Let { is_rec = false; name = x; ty = ty_x; binding = e1; body = e2 } ->
       (match typecheck env e1 with
       | Ok t1 -> if t1 = ty_x then typecheck ((x, ty_x) :: env) e2 else Error (LetTyErr (ty_x, t1))
       | Error err -> Error err)
-  | Let (f, true, ty_f, e1, e2) ->
+  | Let { is_rec = true; name = f; ty = ty_f; binding = e1; body = e2 } -> ->
       (match e1 with
       | Fun (x, ty_x, body) ->
           let extended = (f, ty_f) :: env in
@@ -175,10 +175,10 @@ let rec eval_expr (env : (string * value) list) (e : expr) : value =
           let env'' = (x, v2) :: (f, v1) :: env' in
           eval_expr env'' body
       | _ -> failwith "non-function application")
-  | Let (x, false, _, e1, e2) ->
+  | Let { is_rec = false; name = x; binding = e1; body = e2; _ } ->
       let v1 = eval_expr env e1 in
       eval_expr ((x, v1) :: env) e2
-  | Let (f, true, _, e1, e2) ->
+  | Let { is_rec = true; name = f; binding = e1; body = e2; _ } -> ->
       (match e1 with
       | Fun (x, _, body) ->
           let rec_clos = VRecClos (env, f, x, body) in
