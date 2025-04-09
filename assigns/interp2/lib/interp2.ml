@@ -156,48 +156,68 @@ let rec eval_expr (env : (string * value) list) (e : expr) : value =
   | Bool b -> VBool b
   | Unit -> VUnit
   | Var x -> List.assoc x env
-  | Assert e1 ->
-      (match eval_expr env e1 with
+  | Assert e1 -> (
+      match eval_expr env e1 with
       | VBool true -> VUnit
       | VBool false -> raise AssertFail
-      | _ -> failwith "invalid assert")
-  | If (e1, e2, e3) ->
-      (match eval_expr env e1 with
+      | _ -> failwith "assert expects a boolean"
+    )
+  | If (e1, e2, e3) -> (
+      match eval_expr env e1 with
       | VBool true -> eval_expr env e2
       | VBool false -> eval_expr env e3
-      | _ -> failwith "invalid if condition")
+      | _ -> failwith "if condition must be boolean"
+    )
   | Bop (op, e1, e2) ->
       let v1 = eval_expr env e1 in
       let v2 = eval_expr env e2 in
       eval_binop op v1 v2
-  | Fun (x, _, body) -> VClos {
-    arg = x;
-    body = body;
-    env = List.to_seq env |> Env.of_seq;
-    name = None;
-  }
+
+  | Fun (x, _, body) ->
+      VClos {
+        arg = x;
+        body = body;
+        env = List.to_seq env |> Env.of_seq;
+        name = None;
+      }
+      
   | App (e1, e2) ->
-    let v1 = eval_expr env e1 in
-    let v2 = eval_expr env e2 in
-    match v1 with
-    | VClos { arg = x; body = body; env = clos_env; name = None } ->
-        let new_env = (x, v2) :: Env.bindings clos_env in
-        eval_expr new_env body
-    | VClos { arg = x; body = body; env = clos_env; name = Some f } ->
-        let rec_clos = VClos { arg = x; body = body; env = clos_env; name = Some f } in
-        let new_env = (x, v2) :: (f, rec_clos) :: Env.bindings clos_env in
-        eval_expr new_env body
-    | _ -> failwith "non-function application"
+      let v1 = eval_expr env e1 in
+      let v2 = eval_expr env e2 in
+      (match v1 with
+       | VClos { arg = x; body; env = clos_env; name = None } ->
+           let clos_env_list = Env.bindings clos_env in
+           eval_expr ((x, v2) :: clos_env_list) body
+       | VClos { arg = x; body; env = clos_env; name = Some f } ->
+           let rec_clos = VClos {
+             arg = x;
+             body = body;
+             env = clos_env;
+             name = Some f;
+           } in
+           let clos_env_list = Env.bindings clos_env in
+           eval_expr ((x, v2) :: (f, rec_clos) :: clos_env_list) body
+       | _ -> failwith "application to non-function")
 
   | Let { is_rec = false; name = x; binding = e1; body = e2; _ } ->
       let v1 = eval_expr env e1 in
       eval_expr ((x, v1) :: env) e2
+
   | Let { is_rec = true; name = f; binding = e1; body = e2; _ } ->
-      (match e1 with
+      match e1 with
       | Fun (x, _, body) ->
-          let rec_clos = VRecClos (env, f, x, body) in
+          let clos_env = List.to_seq env |> Env.of_seq in
+          let rec_clos = VClos {
+            arg = x;
+            body = body;
+            env = clos_env;
+            name = Some f;
+          } in
           eval_expr ((f, rec_clos) :: env) e2
-      | _ -> failwith "let rec must bind a function")
+      | _ -> failwith "let rec must bind a function"
+and eval (e : expr) : value =
+  eval_expr [] e
+    
 
 and eval_binop op v1 v2 =
   let num_bin f = match v1, v2 with VNum a, VNum b -> VNum (f a b) | _ -> failwith "type error" in
@@ -219,9 +239,6 @@ and eval_binop op v1 v2 =
   | Neq -> VBool (v1 <> v2)
   | And -> (match v1 with VBool false -> VBool false | VBool true -> v2 | _ -> failwith "type error")
   | Or -> (match v1 with VBool true -> VBool true | VBool false -> v2 | _ -> failwith "type error")
-
-let eval (e : expr) : value =
-  eval_expr [] e
 
 (* Part 4: Interp *)
 
