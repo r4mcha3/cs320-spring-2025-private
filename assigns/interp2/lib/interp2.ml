@@ -28,11 +28,11 @@ and desugar_toplet (t : toplet) (body : expr) : expr =
   let f_expr = desugar_fun_args t.args t.binding in
   Let (t.name, t.is_rec, t.ty, f_expr, body)
 
-and desugar_fun_args (args : (string * ty) list) (e : sexpr) : expr =
+and desugar_fun_args (args : (string * ty) list) (e : sfexpr) : expr =
   let body = desugar_expr e in
   List.fold_right (fun (x, ty) acc -> Fun (x, ty, acc)) args body
 
-and desugar_expr (e : sexpr) : expr =
+and desugar_expr (e : sfexpr) : expr =
   match e with
   | SUnit -> Unit
   | SBool b -> Bool b
