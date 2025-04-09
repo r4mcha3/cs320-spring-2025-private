@@ -102,7 +102,7 @@ let rec typecheck (env : (string * ty) list) (e : expr) : (ty, error) result =
       (match typecheck env e1 with
       | Ok t1 -> if t1 = ty_x then typecheck ((x, ty_x) :: env) e2 else Error (LetTyErr (ty_x, t1))
       | Error err -> Error err)
-  | Let { is_rec = true; name = f; ty = ty_f; binding = e1; body = e2 } -> ->
+  | Let { is_rec = true; name = f; ty = ty_f; binding = e1; body = e2 } ->
       (match e1 with
       | Fun (x, ty_x, body) ->
           let extended = (f, ty_f) :: env in
