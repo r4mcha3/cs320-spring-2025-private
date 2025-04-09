@@ -47,8 +47,14 @@ and desugar_expr (e : sfexpr) : expr =
   | SFun { args; body } ->
       List.fold_right (fun (x, ty) acc -> Fun (x, ty, acc)) args (desugar_expr body)
   | SLet { is_rec; name; args; ty; binding; body } ->
-      let fun_expr = desugar_fun_args args binding in
-      Let { name = name; is_rec = is_rec; ty = ty; binding = binding_expr; body = desugar_expr body }
+    let binding_expr = desugar_fun_args args binding in
+    Let {
+      name = name;
+      is_rec = is_rec;
+      ty = ty;
+      binding = binding_expr;
+      body = desugar_expr body;
+    }
 
 (* Part 2: Type Checking *)
 
