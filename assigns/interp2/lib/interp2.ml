@@ -26,7 +26,7 @@ let rec desugar (p : prog) : expr =
 
 and desugar_toplet (t : toplet) (body : expr) : expr =
   let f_expr = desugar_fun_args t.args t.binding in
-  Let (t.name, t.is_rec, t.ty, f_expr, body)
+  Let { name = t.name; is_rec = t.is_rec; ty = t.ty; binding = f_expr; body = body }
 
 and desugar_fun_args (args : (string * ty) list) (e : sfexpr) : expr =
   let body = desugar_expr e in
@@ -48,7 +48,7 @@ and desugar_expr (e : sfexpr) : expr =
       List.fold_right (fun (x, ty) acc -> Fun (x, ty, acc)) args (desugar_expr body)
   | SLet { is_rec; name; args; ty; binding; body } ->
       let fun_expr = desugar_fun_args args binding in
-      Let (name, is_rec, ty, fun_expr, desugar_expr body)
+      Let { name = name; is_rec = is_rec; ty = ty; binding = binding_expr; body = desugar_expr body }
 
 (* Part 2: Type Checking *)
 
