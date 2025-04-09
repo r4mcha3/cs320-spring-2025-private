@@ -112,8 +112,8 @@ let rec typecheck (env : (string * ty) list) (e : expr) : (ty, error) result =
       | _ -> Error (LetRecErr f))
 
 and typecheck_binop env op e1 e2 =
-  let err_l expected actual = Error (OpTyErrL (op, (expected, actual))) in
-  let err_r expected actual = Error (OpTyErrR (op, (expected, actual))) in
+  let err_l expected actual = Error (OpTyErrL (op, expected, actual)) in
+  let err_r expected actual = Error (OpTyErrR (op, expected, actual)) in
   match typecheck env e1 with
   | Error err -> Error err
   | Ok ty1 ->
