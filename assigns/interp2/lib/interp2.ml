@@ -172,7 +172,6 @@ let rec eval_expr (env : (string * value) list) (e : expr) : value =
       let v1 = eval_expr env e1 in
       let v2 = eval_expr env e2 in
       eval_binop op v1 v2
-
   | Fun (x, _, body) ->
       VClos {
         arg = x;
@@ -180,7 +179,6 @@ let rec eval_expr (env : (string * value) list) (e : expr) : value =
         env = List.to_seq env |> Env.of_seq;
         name = None;
       }
-      
   | App (e1, e2) ->
       let v1 = eval_expr env e1 in
       let v2 = eval_expr env e2 in
@@ -198,14 +196,9 @@ let rec eval_expr (env : (string * value) list) (e : expr) : value =
            let clos_env_list = Env.bindings clos_env in
            eval_expr ((x, v2) :: (f, rec_clos) :: clos_env_list) body
        | _ -> failwith "application to non-function")
-
-  | Let { is_rec = false; name = x; ty = ty_x; binding = e1; body = e2 } ->
-    (match typecheck env e1 with
-    | Ok t1 ->
-        if t1 = ty_x then typecheck ((x, ty_x) :: env) e2
-        else Error (LetTyErr (ty_x, t1))
-    | Error err -> Error err)
-
+  | Let { is_rec = false; name = x; binding = e1; body = e2; _ } ->
+      let v1 = eval_expr env e1 in
+      eval_expr ((x, v1) :: env) e2
   | Let { is_rec = true; name = f; binding = e1; body = e2; _ } ->
       match e1 with
       | Fun (x, _, body) ->
@@ -221,6 +214,7 @@ let rec eval_expr (env : (string * value) list) (e : expr) : value =
 
 and eval (e : expr) : value =
   eval_expr [] e
+
     
 
 and eval_binop op v1 v2 =
