@@ -178,7 +178,7 @@ let rec eval_expr (env : (string * value) list) (e : expr) : value =
   | Let { is_rec = false; name = x; binding = e1; body = e2; _ } ->
       let v1 = eval_expr env e1 in
       eval_expr ((x, v1) :: env) e2
-  | Let { is_rec = true; name = f; binding = e1; body = e2; _ } -> ->
+  | Let { is_rec = true; name = f; binding = e1; body = e2; _ } ->
       (match e1 with
       | Fun (x, _, body) ->
           let rec_clos = VRecClos (env, f, x, body) in
