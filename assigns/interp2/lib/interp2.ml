@@ -3,6 +3,8 @@ open Result
 
 module TyEnv = Map.Make(String)
 
+let (let*) = Result.bind
+
 let parse (s : string) : prog option =
   match Parser.prog Lexer.read (Lexing.from_string s) with
   | e -> Some e
@@ -68,8 +70,8 @@ let rec typecheck (env : ty TyEnv.t) (e : expr) : (ty, error) result =
      | None -> Error (UnknownVar x))
   | Bop (op, e1, e2) ->
     let open Result in
-    typecheck env e1 >>= fun t1 ->
-    typecheck env e2 >>= fun t2 ->
+    let* t1 = typecheck env e1 in
+    let* t2 = typecheck env e2 in
     begin match op, t1, t2 with
     | (Add | Sub | Mul | Div | Mod), IntTy, IntTy -> Ok IntTy
     | (Lt | Lte | Gt | Gte | Eq | Neq), IntTy, IntTy -> Ok BoolTy
