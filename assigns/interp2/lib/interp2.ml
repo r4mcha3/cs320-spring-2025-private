@@ -65,59 +65,60 @@ let rec typecheck (env : ty TyEnv.t) (e : expr) : (ty, error) result =
   | Bool _ -> Ok BoolTy
   | Num _ -> Ok IntTy
   | Var x ->
-    (match TyEnv.find_opt x env with
-     | Some t -> Ok t
-     | None -> Error (UnknownVar x))
+      (match TyEnv.find_opt x env with
+       | Some t -> Ok t
+       | None -> Error (UnknownVar x))
   | Bop (op, e1, e2) ->
-    let* t1 = typecheck env e1 in
-    let* t2 = typecheck env e2 in
-    begin match op, t1, t2 with
-    | (Add | Sub | Mul | Div | Mod), IntTy, IntTy -> Ok IntTy
-    | (Lt | Lte | Gt | Gte | Eq | Neq), IntTy, IntTy -> Ok BoolTy
-    | (And | Or), BoolTy, BoolTy -> Ok BoolTy
-    | (Add | Sub | Mul | Div | Mod), _, _ when t1 <> IntTy -> Error (OpTyErrL (op, IntTy, t1))
-    | (Add | Sub | Mul | Div | Mod), _, _ -> Error (OpTyErrR (op, IntTy, t2))
-    | (Lt | Lte | Gt | Gte | Eq | Neq), _, _ when t1 <> IntTy -> Error (OpTyErrL (op, IntTy, t1))
-    | (Lt | Lte | Gt | Gte | Eq | Neq), _, _ -> Error (OpTyErrR (op, IntTy, t2))
-    | (And | Or), _, _ when t1 <> BoolTy -> Error (OpTyErrL (op, BoolTy, t1))
-    | (And | Or), _, _ -> Error (OpTyErrR (op, BoolTy, t2))
-    end
+      let* t1 = typecheck env e1 in
+      let* t2 = typecheck env e2 in
+      begin match op, t1, t2 with
+      | (Add | Sub | Mul | Div | Mod), IntTy, IntTy -> Ok IntTy
+      | (Lt | Lte | Gt | Gte | Eq | Neq), IntTy, IntTy -> Ok BoolTy
+      | (And | Or), BoolTy, BoolTy -> Ok BoolTy
+      | (Add | Sub | Mul | Div | Mod), _, _ when t1 <> IntTy -> Error (OpTyErrL (op, IntTy, t1))
+      | (Add | Sub | Mul | Div | Mod), _, _ -> Error (OpTyErrR (op, IntTy, t2))
+      | (Lt | Lte | Gt | Gte | Eq | Neq), _, _ when t1 <> IntTy -> Error (OpTyErrL (op, IntTy, t1))
+      | (Lt | Lte | Gt | Gte | Eq | Neq), _, _ -> Error (OpTyErrR (op, IntTy, t2))
+      | (And | Or), _, _ when t1 <> BoolTy -> Error (OpTyErrL (op, BoolTy, t1))
+      | (And | Or), _, _ -> Error (OpTyErrR (op, BoolTy, t2))
+      end
   | If (e1, e2, e3) ->
-    let* t1 = typecheck env e1 in
-    if t1 <> BoolTy then Error (IfCondTyErr t1) else
-    let* t2 = typecheck env e2 in
-    let* t3 = typecheck env e3 in
-    if t2 = t3 then Ok t2 else Error (IfTyErr (t2, t3))
+      let* t1 = typecheck env e1 in
+      if t1 <> BoolTy then Error (IfCondTyErr t1) else
+      let* t2 = typecheck env e2 in
+      let* t3 = typecheck env e3 in
+      if t2 = t3 then Ok t2 else Error (IfTyErr (t2, t3))
   | Fun (x, ty_x, body) ->
-    let env' = TyEnv.add x ty_x env in
-    let* t_body = typecheck env' body in
-    Ok (FunTy (ty_x, t_body))
+      let env' = TyEnv.add x ty_x env in
+      let* t_body = typecheck env' body in
+      Ok (FunTy (ty_x, t_body))
   | App (e1, e2) ->
-    let* t1 = typecheck env e1 in
-    let* t2 = typecheck env e2 in
-    match t1 with
-    | FunTy (arg_ty, ret_ty) ->
-      if arg_ty = t2 then Ok ret_ty
-      else Error (FunArgTyErr (arg_ty, t2))
-    | _ -> Error (FunAppTyErr t1)
-  | Let { is_rec = false; name; ty = ty_annot; binding; body } ->
-    let* t1 = typecheck env binding in
-    if t1 = ty_annot then typecheck (TyEnv.add name ty_annot env) body
-    else Error (LetTyErr (ty_annot, t1))
-  | Let { is_rec = true; name; ty = ty_annot; binding = Fun (arg, arg_ty, fun_body); body } ->
-    let fun_ty = ty_annot in
-    let env' = TyEnv.add name fun_ty env in
-    let env'' = TyEnv.add arg arg_ty env' in
-    let* actual_ret_ty = typecheck env'' fun_body in
-    begin match fun_ty with
-    | FunTy (_, ret_ty) when actual_ret_ty = ret_ty -> typecheck env' body
-    | FunTy (_, ret_ty) -> Error (LetTyErr (ret_ty, actual_ret_ty))
-    | _ -> Error (LetRecErr name)
-    end
-  | Let { is_rec = true; name; _ } -> Error (LetRecErr name)
+      let* t1 = typecheck env e1 in
+      let* t2 = typecheck env e2 in
+      match t1 with
+      | FunTy (arg_ty, ret_ty) ->
+          if arg_ty = t2 then Ok ret_ty
+          else Error (FunArgTyErr (arg_ty, t2))
+      | _ -> Error (FunAppTyErr t1)
+  | Utils.Let { is_rec = false; name; ty = ty_annot; binding; body } ->
+      let* t1 = typecheck env binding in
+      if t1 = ty_annot then typecheck (TyEnv.add name ty_annot env) body
+      else Error (LetTyErr (ty_annot, t1))
+  | Utils.Let { is_rec = true; name; ty = ty_annot; binding = Fun (arg, arg_ty, fun_body); body } ->
+      let fun_ty = ty_annot in
+      let env' = TyEnv.add name fun_ty env in
+      let env'' = TyEnv.add arg arg_ty env' in
+      let* actual_ret_ty = typecheck env'' fun_body in
+      begin match fun_ty with
+      | FunTy (_, ret_ty) when actual_ret_ty = ret_ty -> typecheck env' body
+      | FunTy (_, ret_ty) -> Error (LetTyErr (ret_ty, actual_ret_ty))
+      | _ -> Error (LetRecErr name)
+      end
+  | Utils.Let { is_rec = true; name; _ } ->
+      Error (LetRecErr name)
   | Assert e ->
-    let* ty = typecheck env e in
-    if ty = BoolTy then Ok UnitTy else Error (AssertTyErr ty)
+      let* t = typecheck env e in
+      if t = BoolTy then Ok UnitTy else Error (AssertTyErr t)
 
 let type_of e = typecheck TyEnv.empty e
 
