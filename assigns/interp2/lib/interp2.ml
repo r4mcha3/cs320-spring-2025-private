@@ -1,5 +1,7 @@
 include Utils
 
+let (>>=) = Result.bind
+
 let parse (s : string) : prog option =
   match Parser.prog Lexer.read (Lexing.from_string s) with
   | e -> Some e
@@ -45,7 +47,6 @@ let desugar (prog : prog) : expr =
       nest lets
 
 let rec typecheck (env : ty TyEnv.t) (e : expr) : (ty, error) result =
-  let open Result in
   match e with
   | Unit -> Ok UnitTy
   | Bool _ -> Ok BoolTy
