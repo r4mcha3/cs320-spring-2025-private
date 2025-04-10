@@ -1,5 +1,8 @@
 include Utils
 
+exception DivByZero
+exception AssertFail
+
 let (>>=) = Result.bind
 let parse (s : string) : prog option =
   match Parser.prog Lexer.read (Lexing.from_string s) with
