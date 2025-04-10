@@ -59,7 +59,7 @@ let desugar (prog : prog) : expr =
       | hd :: tl -> desugar_let hd (go tl)
     in go lets
 
-let rec typecheck (env : Utils.ty TyEnv.t) (e : Utils.expr) : (Utils.ty, Utils.error) result =
+let rec typecheck (env : ty TyEnv.t) (e : expr) : (ty, error) result =
   match e with
   | Unit -> Ok UnitTy
   | Bool _ -> Ok BoolTy
@@ -100,12 +100,12 @@ let rec typecheck (env : Utils.ty TyEnv.t) (e : Utils.expr) : (Utils.ty, Utils.e
           if arg_ty = t2 then Ok ret_ty
           else Error (FunArgTyErr (arg_ty, t2))
       | _ -> Error (FunAppTyErr t1)
-  | Utils.Let { is_rec = false; name; ty = ty_annot; binding; body } ->
+  | Utils.Let { is_rec = false; name; ty = let_ty; binding; body } ->
       let* t1 = typecheck env binding in
-      if t1 = ty_annot then typecheck (TyEnv.add name ty_annot env) body
-      else Error (LetTyErr (ty_annot, t1))
-  | Utils.Let { is_rec = true; name; ty = ty_annot; binding = Fun (arg, arg_ty, fun_body); body } ->
-      let fun_ty = ty_annot in
+      if t1 = let_ty then typecheck (TyEnv.add name let_ty env) body
+      else Error (LetTyErr (let_ty, t1))
+  | Utils.Let { is_rec = true; name; ty = let_ty; binding = Fun (arg, arg_ty, fun_body); body } ->
+      let fun_ty = let_ty in
       let env' = TyEnv.add name fun_ty env in
       let env'' = TyEnv.add arg arg_ty env' in
       let* actual_ret_ty = typecheck env'' fun_body in
