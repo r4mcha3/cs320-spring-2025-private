@@ -17,7 +17,7 @@ let rec desugar_expr (e : sfexpr) : expr =
   | SBop (op, e1, e2) -> Bop (op, desugar_expr e1, desugar_expr e2)
   | SAssert e -> Assert (desugar_expr e)
   | SApp (f :: args) ->
-      List.fold_left App (desugar_expr f) (List.map desugar_expr args)
+      List.fold_left (fun acc arg -> App (acc, arg)) (desugar_expr f) (List.map desugar_expr args)
   | SApp [] -> failwith "empty application"
   | SFun { args; body } ->
       List.fold_right (fun (x, ty) acc -> Fun (x, ty, acc)) args (desugar_expr body)
