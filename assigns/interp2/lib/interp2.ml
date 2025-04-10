@@ -45,6 +45,7 @@ let desugar (prog : prog) : expr =
       nest lets
 
 let rec typecheck (env : ty TyEnv.t) (e : expr) : (ty, error) result =
+  let open Result in
   match e with
   | Unit -> Ok UnitTy
   | Bool _ -> Ok BoolTy
