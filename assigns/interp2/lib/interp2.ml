@@ -85,10 +85,10 @@ let rec typecheck (env : ty TyEnv.t) (e : expr) : (ty, error) result =
     end
   | If (e1, e2, e3) ->
     let open Result in
-    typecheck env e1 >>= fun t1 ->
+    let* t1 = typecheck env e1 in
     if t1 <> BoolTy then Error (IfCondTyErr t1) else
-    typecheck env e2 >>= fun t2 ->
-    typecheck env e3 >>= fun t3 ->
+    let* t2 = typecheck env e2 in
+    let* t3 = typecheck env e3 in
     if t2 = t3 then Ok t2 else Error (IfTyErr (t2, t3))
   | Fun (x, ty_x, body) ->
     let env' = TyEnv.add x ty_x env in
@@ -96,8 +96,8 @@ let rec typecheck (env : ty TyEnv.t) (e : expr) : (ty, error) result =
     Ok (FunTy (ty_x, t_body))
   | App (e1, e2) ->
     let open Result in
-    typecheck env e1 >>= fun t1 ->
-    typecheck env e2 >>= fun t2 ->
+    let* t1 = typecheck env e1 in
+    let* t2 = typecheck env e2 in
     match t1 with
     | FunTy (arg_ty, ret_ty) ->
       if arg_ty = t2 then Ok ret_ty
