@@ -92,7 +92,7 @@ let rec typecheck (env : ty TyEnv.t) (e : expr) : (ty, error) result =
     if t2 = t3 then Ok t2 else Error (IfTyErr (t2, t3))
   | Fun (x, ty_x, body) ->
     let env' = TyEnv.add x ty_x env in
-    typecheck env' body >>= fun t_body ->
+    let* t_body = typecheck env' body in
     Ok (FunTy (ty_x, t_body))
   | App (e1, e2) ->
     let open Result in
@@ -105,14 +105,14 @@ let rec typecheck (env : ty TyEnv.t) (e : expr) : (ty, error) result =
     | _ -> Error (FunAppTyErr t1)
   | Let { is_rec = false; name; ty; binding; body } ->
     let open Result in
-    typecheck env binding >>= fun t1 ->
+    let* t1 = typecheck env binding in
     if t1 = ty then typecheck (TyEnv.add name ty env) body
     else Error (LetTyErr (ty, t1))
   | Let { is_rec = true; name; ty; binding = Fun (arg, arg_ty, fun_body); body } ->
     let fun_ty = ty in
     let env' = TyEnv.add name fun_ty env in
     let env'' = TyEnv.add arg arg_ty env' in
-    typecheck env'' fun_body >>= fun actual_ret_ty ->
+    let* actual_ret_ty = typecheck env'' fun_body in
     begin match fun_ty with
     | FunTy (_, ret_ty) when actual_ret_ty = ret_ty -> typecheck env' body
     | FunTy (_, ret_ty) -> Error (LetTyErr (ret_ty, actual_ret_ty))
@@ -120,7 +120,7 @@ let rec typecheck (env : ty TyEnv.t) (e : expr) : (ty, error) result =
     end
   | Let { is_rec = true; name; _ } -> Error (LetRecErr name)
   | Assert e ->
-    typecheck env e >>= fun ty ->
+    let* ty = typecheck env e in
     if ty = BoolTy then Ok UnitTy else Error (AssertTyErr ty)
 
 let type_of e = typecheck TyEnv.empty e
