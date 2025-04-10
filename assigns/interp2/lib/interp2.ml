@@ -69,7 +69,6 @@ let rec typecheck (env : ty TyEnv.t) (e : expr) : (ty, error) result =
      | Some t -> Ok t
      | None -> Error (UnknownVar x))
   | Bop (op, e1, e2) ->
-    let open Result in
     let* t1 = typecheck env e1 in
     let* t2 = typecheck env e2 in
     begin match op, t1, t2 with
@@ -84,7 +83,6 @@ let rec typecheck (env : ty TyEnv.t) (e : expr) : (ty, error) result =
     | (And | Or), _, _ -> Error (OpTyErrR (op, BoolTy, t2))
     end
   | If (e1, e2, e3) ->
-    let open Result in
     let* t1 = typecheck env e1 in
     if t1 <> BoolTy then Error (IfCondTyErr t1) else
     let* t2 = typecheck env e2 in
@@ -95,7 +93,6 @@ let rec typecheck (env : ty TyEnv.t) (e : expr) : (ty, error) result =
     let* t_body = typecheck env' body in
     Ok (FunTy (ty_x, t_body))
   | App (e1, e2) ->
-    let open Result in
     let* t1 = typecheck env e1 in
     let* t2 = typecheck env e2 in
     match t1 with
@@ -103,12 +100,11 @@ let rec typecheck (env : ty TyEnv.t) (e : expr) : (ty, error) result =
       if arg_ty = t2 then Ok ret_ty
       else Error (FunArgTyErr (arg_ty, t2))
     | _ -> Error (FunAppTyErr t1)
-  | Let { is_rec = false; name; ty; binding; body } ->
-    let open Result in
+  | Utils.Let { is_rec = false; name; ty; binding; body } ->
     let* t1 = typecheck env binding in
     if t1 = ty then typecheck (TyEnv.add name ty env) body
     else Error (LetTyErr (ty, t1))
-  | Let { is_rec = true; name; ty; binding = Fun (arg, arg_ty, fun_body); body } ->
+  | Utils.Let { is_rec = true; name; ty; binding = Fun (arg, arg_ty, fun_body); body } ->
     let fun_ty = ty in
     let env' = TyEnv.add name fun_ty env in
     let env'' = TyEnv.add arg arg_ty env' in
@@ -118,7 +114,7 @@ let rec typecheck (env : ty TyEnv.t) (e : expr) : (ty, error) result =
     | FunTy (_, ret_ty) -> Error (LetTyErr (ret_ty, actual_ret_ty))
     | _ -> Error (LetRecErr name)
     end
-  | Let { is_rec = true; name; _ } -> Error (LetRecErr name)
+  | Utils.Let { is_rec = true; name; _ } -> Error (LetRecErr name)
   | Assert e ->
     let* ty = typecheck env e in
     if ty = BoolTy then Ok UnitTy else Error (AssertTyErr ty)
@@ -141,7 +137,7 @@ let rec eval_expr (env : dyn_env) (e : expr) : value =
     | (Add, VNum a, VNum b) -> VNum (a + b)
     | (Sub, VNum a, VNum b) -> VNum (a - b)
     | (Mul, VNum a, VNum b) -> VNum (a * b)
-    | (Div, VNum a, VNum 0) | (Mod, VNum a, VNum 0) -> raise DivByZero
+    | (Div, VNum _, VNum 0) | (Mod, VNum _, VNum 0) -> raise DivByZero
     | (Div, VNum a, VNum b) -> VNum (a / b)
     | (Mod, VNum a, VNum b) -> VNum (a mod b)
     | (Lt, VNum a, VNum b) -> VBool (a < b)
@@ -172,14 +168,14 @@ let rec eval_expr (env : dyn_env) (e : expr) : value =
       eval_expr (Env.add arg v2 (Env.add f v1 clos_env)) body
     | _ -> failwith "application of non-function"
     end
-  | Let { is_rec = false; name; ty=_; binding; body } ->
+  | Utils.Let { is_rec = false; name; ty=_; binding; body } ->
     let v1 = eval_expr env binding in
     eval_expr (Env.add name v1 env) body
-  | Let { is_rec = true; name; ty=_; binding = Fun (arg, _arg_ty, body_fun); body } ->
+  | Utils.Let { is_rec = true; name; ty=_; binding = Fun (arg, _arg_ty, body_fun); body } ->
     let rec_clos = VClos { arg; body = body_fun; env; name = Some name } in
     let env' = Env.add name rec_clos env in
     eval_expr env' body
-  | Let { is_rec = true; _ } -> failwith "let rec must bind a function"
+  | Utils.Let { is_rec = true; _ } -> failwith "let rec must bind a function"
   | Assert e ->
     (match eval_expr env e with
      | VBool true -> VUnit
