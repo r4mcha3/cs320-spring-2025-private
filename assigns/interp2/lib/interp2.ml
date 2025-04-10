@@ -1,4 +1,4 @@
-include Utils
+open Utils
 open Result
 
 module TyEnv = Map.Make(String)
