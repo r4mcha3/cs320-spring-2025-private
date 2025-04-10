@@ -1,7 +1,6 @@
 include Utils
 
 let (>>=) = Result.bind
-
 let parse (s : string) : prog option =
   match Parser.prog Lexer.read (Lexing.from_string s) with
   | e -> Some e
@@ -56,7 +55,7 @@ let rec typecheck (env : ty TyEnv.t) (e : expr) : (ty, error) result =
   | Bop (op, e1, e2) ->
       let open Result in
       typecheck env e1 >>= fun t1 ->
-      typecheck env e2 >>= fun t2 ->
+      begin typecheck env e2 >>= fun t2 ->
       match op, t1, t2 with
       | (Add | Sub | Mul | Div | Mod), IntTy, IntTy -> Ok IntTy
       | (Lt | Lte | Gt | Gte | Eq | Neq), IntTy, IntTy -> Ok BoolTy
@@ -67,6 +66,8 @@ let rec typecheck (env : ty TyEnv.t) (e : expr) : (ty, error) result =
       | (Lt | Lte | Gt | Gte | Eq | Neq), _, t2 -> Error (OpTyErrR (op, IntTy, t2))
       | (And | Or), t1, _ when t1 <> BoolTy -> Error (OpTyErrL (op, BoolTy, t1))
       | (And | Or), _, t2 -> Error (OpTyErrR (op, BoolTy, t2))
+      end
+      
   | If (e1, e2, e3) ->
       let open Result in
       typecheck env e1 >>= fun t1 ->
