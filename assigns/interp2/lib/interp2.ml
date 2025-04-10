@@ -100,11 +100,11 @@ let rec typecheck (env : ty TyEnv.t) (e : expr) : (ty, error) result =
           if arg_ty = t2 then Ok ret_ty
           else Error (FunArgTyErr (arg_ty, t2))
       | _ -> Error (FunAppTyErr t1)
-  | Utils.Let { is_rec = false; name; ty = ty_annot; binding; body } ->
+  | Let { is_rec = false; name; ty = ty_annot; binding; body } ->
       let* t1 = typecheck env binding in
       if t1 = ty_annot then typecheck (TyEnv.add name ty_annot env) body
       else Error (LetTyErr (ty_annot, t1))
-  | Utils.Let { is_rec = true; name; ty = ty_annot; binding = Fun (arg, arg_ty, fun_body); body } ->
+  | Let { is_rec = true; name; ty = ty_annot; binding = Fun (arg, arg_ty, fun_body); body } ->
       let fun_ty = ty_annot in
       let env' = TyEnv.add name fun_ty env in
       let env'' = TyEnv.add arg arg_ty env' in
@@ -114,7 +114,7 @@ let rec typecheck (env : ty TyEnv.t) (e : expr) : (ty, error) result =
       | FunTy (_, ret_ty) -> Error (LetTyErr (ret_ty, actual_ret_ty))
       | _ -> Error (LetRecErr name)
       end
-  | Utils.Let { is_rec = true; name; _ } ->
+  | Let { is_rec = true; name; _ } ->
       Error (LetRecErr name)
   | Assert e ->
       let* t = typecheck env e in
