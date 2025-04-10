@@ -164,7 +164,7 @@ let rec eval_expr (env : dyn_env) (e : expr) : value =
       let rec_clos = VClos { arg; body = body_fun; env; name = Some name } in
       let env' = Env.add name rec_clos env in
       eval_expr env' body
-  | Let { is_rec = true; name; _ } ->
+  | Let { is_rec = true; name = _name; _ } ->
       failwith "ill-formed let rec"
   | Assert e ->
       (match eval_expr env e with
