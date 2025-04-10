@@ -1,254 +1,195 @@
 include Utils
 
-(* Part 0: Parsing *)
+module TyEnv = Map.Make(String)
 
 let parse (s : string) : prog option =
   match Parser.prog Lexer.read (Lexing.from_string s) with
   | e -> Some e
   | exception _ -> None
 
-(* Part 1: Desugaring *)
-
-let rec desugar (p : prog) : expr =
-  match p with
-  | [] -> Unit
-  | _ ->
-    let rec nest_lets = function
-      | [] -> failwith "unreachable"
-      | [last] ->
-          let body = Var last.name in
-          desugar_toplet last body
-      | hd :: tl ->
-          let body = nest_lets tl in
-          desugar_toplet hd body
-    in
-    nest_lets p
-
-and desugar_toplet (t : toplet) (body : expr) : expr =
-  let f_expr = desugar_fun_args t.args t.binding in
-  Let { name = t.name; is_rec = t.is_rec; ty = t.ty; binding = f_expr; body = body }
-
-and desugar_fun_args (args : (string * ty) list) (e : sfexpr) : expr =
-  let body = desugar_expr e in
-  List.fold_right (fun (x, ty) acc -> Fun (x, ty, acc)) args body
-
-and desugar_expr (e : sfexpr) : expr =
+let rec desugar_expr (e : sfexpr) : expr =
   match e with
   | SUnit -> Unit
   | SBool b -> Bool b
   | SNum n -> Num n
   | SVar x -> Var x
-  | SAssert e1 -> Assert (desugar_expr e1)
-  | SBop (op, e1, e2) -> Bop (op, desugar_expr e1, desugar_expr e2)
   | SIf (e1, e2, e3) -> If (desugar_expr e1, desugar_expr e2, desugar_expr e3)
+  | SBop (op, e1, e2) -> Bop (op, desugar_expr e1, desugar_expr e2)
+  | SAssert e -> Assert (desugar_expr e)
   | SApp (f :: args) ->
-      List.fold_left (fun acc arg -> App (acc, desugar_expr arg)) (desugar_expr f) args
-  | SApp [] -> failwith "invalid empty application"
+    List.fold_left
+      (fun acc arg -> App (acc, desugar_expr arg))
+      (desugar_expr f)
+      (List.map desugar_expr args)
+  | SApp [] -> failwith "Empty application"
   | SFun { args; body } ->
-      List.fold_right (fun (x, ty) acc -> Fun (x, ty, acc)) args (desugar_expr body)
+    List.fold_right
+      (fun (arg_name, arg_ty) acc -> Fun (arg_name, arg_ty, acc))
+      args
+      (desugar_expr body)
   | SLet { is_rec; name; args; ty; binding; body } ->
-    let binding_expr = desugar_fun_args args binding in
-    Let {
-      name = name;
-      is_rec = is_rec;
-      ty = ty;
-      binding = binding_expr;
-      body = desugar_expr body;
-    }
+    let binding_expr =
+      List.fold_right
+        (fun (arg_name, arg_ty) acc -> Fun (arg_name, arg_ty, acc))
+        args
+        (desugar_expr binding)
+    in
+    Let { is_rec; name; ty; binding = binding_expr; body = desugar_expr body }
 
-(* Part 2: Type Checking *)
+let desugar_let ({ is_rec; name; args; ty; binding } : toplet) (body : expr) : expr =
+  let func_expr =
+    List.fold_right
+      (fun (arg_name, arg_ty) acc -> Fun (arg_name, arg_ty, acc))
+      args
+      (desugar_expr binding)
+  in
+  Let { is_rec; name; ty; binding = func_expr; body }
 
-let lookup (env : (string * ty) list) (x : string) : (ty, error) result =
-  match List.assoc_opt x env with
-  | Some ty -> Ok ty
-  | None -> Error (UnknownVar x)
+let desugar (prog : prog) : expr =
+  match prog with
+  | [] -> Unit
+  | lets ->
+    let rec go lets =
+      match lets with
+      | [] -> failwith "unreachable"
+      | [last] -> desugar_let last (Var last.name)
+      | hd :: tl -> desugar_let hd (go tl)
+    in go lets
 
-let rec typecheck (env : (string * ty) list) (e : expr) : (ty, error) result =
+let rec typecheck (env : ty TyEnv.t) (e : expr) : (ty, error) result =
   match e with
   | Unit -> Ok UnitTy
   | Bool _ -> Ok BoolTy
   | Num _ -> Ok IntTy
-  | Var x -> lookup env x
-  | Assert e1 ->
-      (match typecheck env e1 with
-      | Ok BoolTy -> Ok UnitTy
-      | Ok t -> Error (AssertTyErr t)
-      | Error err -> Error err)
+  | Var x ->
+    (match TyEnv.find_opt x env with
+     | Some t -> Ok t
+     | None -> Error (UnknownVar x))
+  | Bop (op, e1, e2) ->
+    let open Result in
+    typecheck env e1 >>= fun t1 ->
+    typecheck env e2 >>= fun t2 ->
+    begin match op, t1, t2 with
+    | (Add | Sub | Mul | Div | Mod), IntTy, IntTy -> Ok IntTy
+    | (Lt | Lte | Gt | Gte | Eq | Neq), IntTy, IntTy -> Ok BoolTy
+    | (And | Or), BoolTy, BoolTy -> Ok BoolTy
+    | (Add | Sub | Mul | Div | Mod), _, _ when t1 <> IntTy -> Error (OpTyErrL (op, IntTy, t1))
+    | (Add | Sub | Mul | Div | Mod), _, _ -> Error (OpTyErrR (op, IntTy, t2))
+    | (Lt | Lte | Gt | Gte | Eq | Neq), _, _ when t1 <> IntTy -> Error (OpTyErrL (op, IntTy, t1))
+    | (Lt | Lte | Gt | Gte | Eq | Neq), _, _ -> Error (OpTyErrR (op, IntTy, t2))
+    | (And | Or), _, _ when t1 <> BoolTy -> Error (OpTyErrL (op, BoolTy, t1))
+    | (And | Or), _, _ -> Error (OpTyErrR (op, BoolTy, t2))
+    end
   | If (e1, e2, e3) ->
-    (match typecheck env e1 with
-     | Ok BoolTy ->
-         (match typecheck env e2 with
-          | Ok t1 ->
-              (match typecheck env e3 with
-               | Ok t2 -> if t1 = t2 then Ok t1 else Error (IfTyErr (t1, t2))
-               | Error err -> Error err)
-          | Error err -> Error err)
-     | Ok t -> Error (IfCondTyErr t)
-     | Error err -> Error err)
-  | Bop (op, e1, e2) -> typecheck_binop env op e1 e2
+    let open Result in
+    typecheck env e1 >>= fun t1 ->
+    if t1 <> BoolTy then Error (IfCondTyErr t1) else
+    typecheck env e2 >>= fun t2 ->
+    typecheck env e3 >>= fun t3 ->
+    if t2 = t3 then Ok t2 else Error (IfTyErr (t2, t3))
   | Fun (x, ty_x, body) ->
-      (match typecheck ((x, ty_x) :: env) body with
-      | Ok ty_body -> Ok (FunTy (ty_x, ty_body))
-      | Error err -> Error err)
+    let env' = TyEnv.add x ty_x env in
+    typecheck env' body >>= fun t_body ->
+    Ok (FunTy (ty_x, t_body))
   | App (e1, e2) ->
-      (match typecheck env e1 with
-      | Ok (FunTy (param_ty, ret_ty)) ->
-          (match typecheck env e2 with
-          | Ok arg_ty -> if arg_ty = param_ty then Ok ret_ty else Error (FunArgTyErr (param_ty, arg_ty))
-          | Error err -> Error err)
-      | Ok t -> Error (FunAppTyErr t)
-      | Error err -> Error err)
+    let open Result in
+    typecheck env e1 >>= fun t1 ->
+    typecheck env e2 >>= fun t2 ->
+    match t1 with
+    | FunTy (arg_ty, ret_ty) ->
+      if arg_ty = t2 then Ok ret_ty
+      else Error (FunArgTyErr (arg_ty, t2))
+    | _ -> Error (FunAppTyErr t1)
+  | Let { is_rec = false; name; ty; binding; body } ->
+    let open Result in
+    typecheck env binding >>= fun t1 ->
+    if t1 = ty then typecheck (TyEnv.add name ty env) body
+    else Error (LetTyErr (ty, t1))
+  | Let { is_rec = true; name; ty; binding = Fun (arg, arg_ty, fun_body); body } ->
+    let fun_ty = ty in
+    let env' = TyEnv.add name fun_ty env in
+    let env'' = TyEnv.add arg arg_ty env' in
+    typecheck env'' fun_body >>= fun actual_ret_ty ->
+    begin match fun_ty with
+    | FunTy (_, ret_ty) when actual_ret_ty = ret_ty -> typecheck env' body
+    | FunTy (_, ret_ty) -> Error (LetTyErr (ret_ty, actual_ret_ty))
+    | _ -> Error (LetRecErr name)
+    end
+  | Let { is_rec = true; name; _ } -> Error (LetRecErr name)
+  | Assert e ->
+    typecheck env e >>= fun ty ->
+    if ty = BoolTy then Ok UnitTy else Error (AssertTyErr ty)
 
-  | Let { is_rec = false; name = x; binding = e1; body = e2; _ } ->
-    let v1 = eval_expr env e1 in
-    eval_expr ((x, v1) :: env) e2
-
-  | Let { is_rec = true; name = f; ty = ty_f; binding = e1; body = e2 } ->
-      (match e1 with
-       | Fun (x, ty_x, body_fun) ->
-           let env' = (f, ty_f) :: env in
-           (match typecheck env' e1 with
-            | Ok t1 -> if t1 = ty_f
-                       then typecheck env' e2
-                       else Error (LetTyErr (ty_f, t1))
-            | Error err -> Error err)
-       | _ -> Error (LetRecErr f))
-
-
-
-and typecheck_binop env op e1 e2 =
-  let err_l expected actual = Error (OpTyErrL (op, expected, actual)) in
-  let err_r expected actual = Error (OpTyErrR (op, expected, actual)) in
-  match typecheck env e1 with
-  | Error err -> Error err
-  | Ok ty1 ->
-      match typecheck env e2 with
-      | Error err -> Error err
-      | Ok ty2 ->
-          let int_ops = [Add; Sub; Mul; Div; Mod] in
-          let cmp_ops = [Lt; Lte; Gt; Gte; Eq; Neq] in
-          let bool_ops = [And; Or] in
-          if List.mem op int_ops then
-            if ty1 <> IntTy then err_l IntTy ty1
-            else if ty2 <> IntTy then err_r IntTy ty2
-            else Ok IntTy
-          else if List.mem op cmp_ops then
-            if ty1 <> IntTy then err_l IntTy ty1
-            else if ty2 <> IntTy then err_r IntTy ty2
-            else Ok BoolTy
-          else if List.mem op bool_ops then
-            if ty1 <> BoolTy then err_l BoolTy ty1
-            else if ty2 <> BoolTy then err_r BoolTy ty2
-            else Ok BoolTy
-          else failwith "unreachable: unknown operator"
-
-let type_of (e : expr) : (ty, error) result =
-  typecheck [] e
-
-(* Part 3: Evaluation *)
+let type_of e = typecheck TyEnv.empty e
 
 exception AssertFail
 exception DivByZero
 
-let rec eval_expr (env : (string * value) list) (e : expr) : value =
+let rec eval_expr (env : dyn_env) (e : expr) : value =
   match e with
-  | Num n -> VNum n
-  | Bool b -> VBool b
   | Unit -> VUnit
-  | Var x -> List.assoc x env
-  | Assert e1 -> (
-      match eval_expr env e1 with
-      | VBool true -> VUnit
-      | VBool false -> raise AssertFail
-      | _ -> failwith "assert expects a boolean"
-    )
-  | If (e1, e2, e3) -> (
-      match eval_expr env e1 with
-      | VBool true -> eval_expr env e2
-      | VBool false -> eval_expr env e3
-      | _ -> failwith "if condition must be boolean"
-    )
+  | Bool b -> VBool b
+  | Num n -> VNum n
+  | Var x -> Env.find x env
   | Bop (op, e1, e2) ->
-      let v1 = eval_expr env e1 in
-      let v2 = eval_expr env e2 in
-      eval_binop op v1 v2
-  | Fun (x, _, body) ->
-      VClos {
-        arg = x;
-        body = body;
-        env = List.to_seq env |> Env.of_seq;
-        name = None;
-      }
+    let v1 = eval_expr env e1 in
+    let v2 = eval_expr env e2 in
+    begin match (op, v1, v2) with
+    | (Add, VNum a, VNum b) -> VNum (a + b)
+    | (Sub, VNum a, VNum b) -> VNum (a - b)
+    | (Mul, VNum a, VNum b) -> VNum (a * b)
+    | (Div, VNum a, VNum 0) | (Mod, VNum a, VNum 0) -> raise DivByZero
+    | (Div, VNum a, VNum b) -> VNum (a / b)
+    | (Mod, VNum a, VNum b) -> VNum (a mod b)
+    | (Lt, VNum a, VNum b) -> VBool (a < b)
+    | (Lte, VNum a, VNum b) -> VBool (a <= b)
+    | (Gt, VNum a, VNum b) -> VBool (a > b)
+    | (Gte, VNum a, VNum b) -> VBool (a >= b)
+    | (Eq, VNum a, VNum b) -> VBool (a = b)
+    | (Neq, VNum a, VNum b) -> VBool (a <> b)
+    | (And, VBool false, _) -> VBool false
+    | (And, VBool true, VBool b) -> VBool b
+    | (Or, VBool true, _) -> VBool true
+    | (Or, VBool false, VBool b) -> VBool b
+    | _ -> failwith "ill-typed bop"
+    end
+  | If (e1, e2, e3) ->
+    (match eval_expr env e1 with
+     | VBool true -> eval_expr env e2
+     | VBool false -> eval_expr env e3
+     | _ -> failwith "ill-typed if")
+  | Fun (x, _ty, body) -> VClos { arg = x; body; env; name = None }
   | App (e1, e2) ->
-      let v1 = eval_expr env e1 in
-      let v2 = eval_expr env e2 in
-      (match v1 with
-       | VClos { arg = x; body; env = clos_env; name = None } ->
-           let clos_env_list = Env.bindings clos_env in
-           eval_expr ((x, v2) :: clos_env_list) body
-       | VClos { arg = x; body; env = clos_env; name = Some f } ->
-           let rec_clos = VClos {
-             arg = x;
-             body = body;
-             env = clos_env;
-             name = Some f;
-           } in
-           let clos_env_list = Env.bindings clos_env in
-           eval_expr ((x, v2) :: (f, rec_clos) :: clos_env_list) body
-       | _ -> failwith "application to non-function")
-  | Let { is_rec = false; name = x; ty = ty_x; binding = e1; body = e2 } ->
-    (match typecheck env e1 with
-     | Ok t1 ->
-         if t1 = ty_x
-         then typecheck ((x, ty_x) :: env) e2
-         else Error (LetTyErr (ty_x, t1))
-     | Error err -> Error err)
+    let v1 = eval_expr env e1 in
+    let v2 = eval_expr env e2 in
+    begin match v1 with
+    | VClos { arg; body; env = clos_env; name = None } ->
+      eval_expr (Env.add arg v2 clos_env) body
+    | VClos { arg; body; env = clos_env; name = Some f } ->
+      eval_expr (Env.add arg v2 (Env.add f v1 clos_env)) body
+    | _ -> failwith "application of non-function"
+    end
+  | Let { is_rec = false; name; ty=_; binding; body } ->
+    let v1 = eval_expr env binding in
+    eval_expr (Env.add name v1 env) body
+  | Let { is_rec = true; name; ty=_; binding = Fun (arg, _arg_ty, body_fun); body } ->
+    let rec_clos = VClos { arg; body = body_fun; env; name = Some name } in
+    let env' = Env.add name rec_clos env in
+    eval_expr env' body
+  | Let { is_rec = true; _ } -> failwith "let rec must bind a function"
+  | Assert e ->
+    (match eval_expr env e with
+     | VBool true -> VUnit
+     | VBool false -> raise AssertFail
+     | _ -> failwith "assert expects a bool")
 
-  | Let { is_rec = true; name = f; ty = ty_f; binding = e1; body = e2 } ->
-    (match e1 with
-     | Fun (x, ty_x, body_fun) ->
-         let env' = (f, ty_f) :: env in
-         (match typecheck env' e1 with
-          | Ok t1 -> if t1 = ty_f
-                     then typecheck env' e2
-                     else Error (LetTyErr (ty_f, t1))
-          | Error err -> Error err)
-     | _ -> Error (LetRecErr f))
-
-and eval (e : expr) : value =
-  eval_expr [] e
-
-
-    
-
-and eval_binop op v1 v2 =
-  let num_bin f = match v1, v2 with VNum a, VNum b -> VNum (f a b) | _ -> failwith "type error" in
-  let bool_bin f = match v1, v2 with VBool a, VBool b -> VBool (f a b) | _ -> failwith "type error" in
-  let cmp_bin f = match v1, v2 with VNum a, VNum b -> VBool (f a b) | _ -> failwith "type error" in
-  match op with
-  | Add -> num_bin ( + )
-  | Sub -> num_bin ( - )
-  | Mul -> num_bin ( * )
-  | Div ->
-      (match v2 with VNum 0 -> raise DivByZero | VNum b -> (match v1 with VNum a -> VNum (a / b) | _ -> failwith "type error") | _ -> failwith "type error")
-  | Mod ->
-      (match v2 with VNum 0 -> raise DivByZero | VNum b -> (match v1 with VNum a -> VNum (a mod b) | _ -> failwith "type error") | _ -> failwith "type error")
-  | Lt -> cmp_bin ( < )
-  | Lte -> cmp_bin ( <= )
-  | Gt -> cmp_bin ( > )
-  | Gte -> cmp_bin ( >= )
-  | Eq -> VBool (v1 = v2)
-  | Neq -> VBool (v1 <> v2)
-  | And -> (match v1 with VBool false -> VBool false | VBool true -> v2 | _ -> failwith "type error")
-  | Or -> (match v1 with VBool true -> VBool true | VBool false -> v2 | _ -> failwith "type error")
-
-(* Part 4: Interp *)
+let eval e = eval_expr Env.empty e
 
 let interp (s : string) : (value, error) result =
   match parse s with
-  | None -> Error ParseFail
-  | Some prog ->
-      let core = desugar prog in
-      match type_of core with
-      | Error err -> Error err
-      | Ok _ -> Ok (eval core)
+  | None -> Error ParseErr
+  | Some p ->
+    let expr = desugar p in
+    match type_of expr with
+    | Error err -> Error err
+    | Ok _ -> Ok (eval expr)
