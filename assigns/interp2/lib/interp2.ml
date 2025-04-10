@@ -59,7 +59,7 @@ let desugar (prog : prog) : expr =
       | hd :: tl -> desugar_let hd (go tl)
     in go lets
 
-let rec typecheck (env : ty TyEnv.t) (e : expr) : (ty, error) result =
+let rec typecheck (env : Utils.ty TyEnv.t) (e : Utils.expr) : (Utils.ty, Utils.error) result =
   match e with
   | Unit -> Ok UnitTy
   | Bool _ -> Ok BoolTy
