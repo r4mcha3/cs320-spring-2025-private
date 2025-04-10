@@ -20,7 +20,7 @@ let rec desugar_expr (e : sfexpr) : expr =
     List.fold_left
       (fun acc arg -> App (acc, desugar_expr arg))
       (desugar_expr f)
-      (List.map desugar_expr args)
+      args
   | SApp [] -> failwith "Empty application"
   | SFun { args; body } ->
     List.fold_right
