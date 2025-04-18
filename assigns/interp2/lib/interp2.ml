@@ -21,7 +21,7 @@ let rec desugar_expr (e : sfexpr) : expr =
   | SBop (op, e1, e2) -> Bop (op, desugar_expr e1, desugar_expr e2)
   | SAssert e -> Assert (desugar_expr e)
   | SApp (f :: args) ->
-      List.fold_left (fun acc arg -> App (acc, desugar_expr arg)) (desugar_expr f) args
+    List.fold_left (fun acc arg -> App (acc, desugar_expr arg)) (desugar_expr f) args
   | SApp [] -> failwith "empty application"
   | SFun { args; body } ->
       List.fold_right (fun (x, ty) acc -> Fun (x, ty, acc)) args (desugar_expr body)
@@ -96,16 +96,18 @@ let rec typecheck (env : ty TyEnv.t) (e : expr) : (ty, error) result =
         let env' = TyEnv.add name ty env in
         typecheck env' body
       else Error (LetTyErr (ty, t1))
-  | Let { is_rec = true; name; ty; binding = Fun (arg, arg_ty, fun_body); body } ->
-      let fun_ty = ty in
-      let env' = TyEnv.add name fun_ty env in
-      let env'' = TyEnv.add arg arg_ty env' in
-      typecheck env'' fun_body >>= fun actual_ret_ty ->
-      (match fun_ty with
-       | FunTy (_, expected_ret_ty) when expected_ret_ty = actual_ret_ty ->
-           typecheck env' body
-       | FunTy (_, expected_ret_ty) -> Error (LetTyErr (expected_ret_ty, actual_ret_ty))
-       | _ -> assert false)
+  | Let { is_rec = true; name; ty; binding; body } ->
+    (match binding with
+     | Fun (arg, arg_ty, fun_body) ->
+         let env' = TyEnv.add name ty env in
+         let env'' = TyEnv.add arg arg_ty env' in
+         typecheck env'' fun_body >>= fun actual_ret_ty ->
+         (match ty with
+          | FunTy (_, expected_ret_ty) when expected_ret_ty = actual_ret_ty ->
+              typecheck env' body
+          | FunTy (_, expected_ret_ty) -> Error (LetTyErr (expected_ret_ty, actual_ret_ty))
+          | _ -> Error (LetRecErr name))
+     | _ -> Error (LetRecErr name))
   | Let { is_rec = true; _ } -> Error (LetRecErr "<unknown>")
   | Assert e ->
       typecheck env e >>= fun ty ->
