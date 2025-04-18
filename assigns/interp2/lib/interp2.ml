@@ -21,7 +21,7 @@ let rec desugar_expr (e : sfexpr) : expr =
   | SBop (op, e1, e2) -> Bop (op, desugar_expr e1, desugar_expr e2)
   | SAssert e -> Assert (desugar_expr e)
   | SApp (f :: args) ->
-      List.fold_left (fun acc arg -> App (acc, arg)) (desugar_expr f) (List.map desugar_expr args)
+      List.fold_left (fun acc arg -> App (acc, desugar_expr arg)) (desugar_expr f) args
   | SApp [] -> failwith "empty application"
   | SFun { args; body } ->
       List.fold_right (fun (x, ty) acc -> Fun (x, ty, acc)) args (desugar_expr body)
@@ -58,8 +58,8 @@ let rec typecheck (env : ty TyEnv.t) (e : expr) : (ty, error) result =
   | Bop (op, e1, e2) ->
       let open Result in
       typecheck env e1 >>= fun t1 ->
-      begin typecheck env e2 >>= fun t2 ->
-      match op, t1, t2 with
+      typecheck env e2 >>= fun t2 ->
+      begin match op, t1, t2 with
       | (Add | Sub | Mul | Div | Mod), IntTy, IntTy -> Ok IntTy
       | (Lt | Lte | Gt | Gte | Eq | Neq), IntTy, IntTy -> Ok BoolTy
       | (And | Or), BoolTy, BoolTy -> Ok BoolTy
@@ -70,7 +70,6 @@ let rec typecheck (env : ty TyEnv.t) (e : expr) : (ty, error) result =
       | (And | Or), t1, _ when t1 <> BoolTy -> Error (OpTyErrL (op, BoolTy, t1))
       | (And | Or), _, t2 -> Error (OpTyErrR (op, BoolTy, t2))
       end
-      
   | If (e1, e2, e3) ->
       let open Result in
       typecheck env e1 >>= fun t1 ->
@@ -107,7 +106,7 @@ let rec typecheck (env : ty TyEnv.t) (e : expr) : (ty, error) result =
            typecheck env' body
        | FunTy (_, expected_ret_ty) -> Error (LetTyErr (expected_ret_ty, actual_ret_ty))
        | _ -> assert false)
-  | Let { is_rec = true; name; _ } -> Error (LetRecErr name)
+  | Let { is_rec = true; _ } -> Error (LetRecErr "<unknown>")
   | Assert e ->
       typecheck env e >>= fun ty ->
       if ty = BoolTy then Ok UnitTy else Error (AssertTyErr ty)
@@ -164,8 +163,7 @@ let rec eval_expr (env : dyn_env) (e : expr) : value =
       let rec_clos = VClos { arg; body = body_fun; env; name = Some name } in
       let env' = Env.add name rec_clos env in
       eval_expr env' body
-  | Let { is_rec = true; name = _name; _ } ->
-      failwith "ill-formed let rec"
+  | Let { is_rec = true; _ } -> failwith "ill-formed let rec"
   | Assert e ->
       (match eval_expr env e with
        | VBool true -> VUnit
