@@ -73,7 +73,7 @@ ty:
   | TBOOL { TBool }
   | TLIST ty=ty { TList ty }
   | TOPTION ty=ty { TOption ty }
-  | TVAR v { TVar v }
+  | v=TVAR { TVar v }
   | LPAREN ty=ty RPAREN { ty }
   | ty1=ty ARROW ty2=ty { TFun (ty1, ty2) }
   | ty1=ty STAR ty2=ty { TPair (ty1, ty2) }
