@@ -12,7 +12,7 @@ rule read =
   parse
   | "let" { LET }
   | "rec" { REC }
-  | "=" { EQ }
+  | "=" { EQUAL }
   | "in" { IN }
   | ":" { COLON }
   | ";" { SEMICOLON }
