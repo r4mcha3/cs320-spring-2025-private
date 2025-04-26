@@ -21,7 +21,7 @@ let mk_list e es =
 %token <float> FLOAT
 %token <string> VAR
 
-%token LET REC EQ IN COLON
+%token LET REC EQUALS IN COLON
 %token FUN MATCH WITH ALT
 %token IF THEN ELSE
 %token LPAREN RPAREN
