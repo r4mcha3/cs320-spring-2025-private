@@ -107,15 +107,6 @@ match_cases:
   | ALT LPAREN x=VAR COMMA y=VAR RPAREN ARROW case=expr
     { fun matched -> PairMatch { matched; fst_name=x; snd_name=y; case } }
 
-%inline PAT_SOME:
-  | SOME
-
-%inline PAT_CONS:
-  | VAR
-
-%inline PAT_PAIR:
-  | VAR
-
 expr2:
   | e1=expr2 op=bop e2=expr2
     { Bop (op, e1, e2) }
