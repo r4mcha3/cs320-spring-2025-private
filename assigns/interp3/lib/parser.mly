@@ -100,11 +100,11 @@ expr:
   | e=expr2 { e }
 
 match_cases:
-  | ALT PAT_SOME some_name=VAR ARROW some_case=expr ALT NONE ARROW none_case=expr
+  | ALT SOME some_name=VAR ARROW some_case=expr ALT NONE ARROW none_case=expr
     { fun matched -> OptMatch { matched; some_name; some_case; none_case } }
-  | ALT PAT_CONS hd=VAR CONS tl=VAR ARROW cons_case=expr ALT LBRACKET RBRACKET ARROW nil_case=expr
+  | ALT hd=VAR CONS tl=VAR ARROW cons_case=expr ALT LBRACKET RBRACKET ARROW nil_case=expr
     { fun matched -> ListMatch { matched; hd_name=hd; tl_name=tl; cons_case; nil_case } }
-  | ALT PAT_PAIR x=VAR COMMA y=VAR ARROW case=expr
+  | ALT LPAREN x=VAR COMMA y=VAR RPAREN ARROW case=expr
     { fun matched -> PairMatch { matched; fst_name=x; snd_name=y; case } }
 
 %inline PAT_SOME:
