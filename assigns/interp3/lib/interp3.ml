@@ -5,7 +5,76 @@ let parse (s : string) : prog option =
   | prog -> Some prog
   | exception _ -> None
 
-let principle_type (_ty : ty) (_cs : constr list) : ty_scheme option = assert false
+type subst = (ident * ty) list
+
+let rec apply_subst (s : subst) (t : ty) : ty =
+  match t with
+  | TUnit | TInt | TFloat | TBool -> t
+  | TVar x ->
+      (match List.assoc_opt x s with
+       | Some t' -> t'
+       | None -> TVar x)
+  | TList t1 -> TList (apply_subst s t1)
+  | TOption t1 -> TOption (apply_subst s t1)
+  | TPair (t1, t2) -> TPair (apply_subst s t1, apply_subst s t2)
+  | TFun (t1, t2) -> TFun (apply_subst s t1, apply_subst s t2)
+
+let compose_subst (s1 : subst) (s2 : subst) : subst =
+  List.map (fun (x, t) -> (x, apply_subst s1 t)) s2 @ s1
+
+let rec unify (cs : constr list) : subst option =
+  match cs with
+  | [] -> Some []
+  | (t1, t2) :: rest ->
+      if t1 = t2 then
+        unify rest
+      else
+        match (t1, t2) with
+        | (TVar x, t) | (t, TVar x) ->
+            if occurs x t then
+              None
+            else
+              let rest' = List.map (fun (l, r) -> (subst_one x t l, subst_one x t r)) rest in
+              (match unify rest' with
+               | Some s -> Some ((x, t) :: s)
+               | None -> None)
+        | (TList t1, TList t2)
+        | (TOption t1, TOption t2) ->
+            unify ((t1, t2) :: rest)
+        | (TPair (l1, r1), TPair (l2, r2))
+        | (TFun (l1, r1), TFun (l2, r2)) ->
+            unify ((l1, l2) :: (r1, r2) :: rest)
+        | _ -> None
+
+and subst_one (x : ident) (t : ty) (t' : ty) : ty =
+  apply_subst [(x, t)] t'
+
+and occurs (x : ident) (t : ty) : bool =
+  match t with
+  | TUnit | TInt | TFloat | TBool -> false
+  | TVar y -> x = y
+  | TList t1
+  | TOption t1 -> occurs x t1
+  | TPair (t1, t2)
+  | TFun (t1, t2) -> occurs x t1 || occurs x t2
+
+let rec free_vars_ty (t : ty) : VarSet.t =
+  match t with
+  | TUnit | TInt | TFloat | TBool -> VarSet.empty
+  | TVar x -> VarSet.singleton x
+  | TList t1 | TOption t1 -> free_vars_ty t1
+  | TPair (t1, t2) | TFun (t1, t2) -> VarSet.union (free_vars_ty t1) (free_vars_ty t2)
+
+let generalize (t : ty) : ty_scheme =
+  Forall (free_vars_ty t, t)
+
+let principle_type (ty : ty) (cs : constr list) : ty_scheme option =
+  match unify cs with
+  | None -> None
+  | Some subst ->
+      let ty' = apply_subst subst ty in
+      Some (generalize ty')
+
 
 let type_of (_ctxt: stc_env) (_e : expr) : ty_scheme option = assert false
 
