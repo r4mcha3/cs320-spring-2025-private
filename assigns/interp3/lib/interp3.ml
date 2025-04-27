@@ -250,12 +250,13 @@ and eval_binop bop v1 v2 =
 and compare_values v1 v2 op =
   match v1, v2 with
   | VInt i1, VInt i2 -> op i1 i2
-  | VBool b1, VBool b2 -> op b1 b2
+  | VBool b1, VBool b2 ->
+      if op 1 1 = true then (b1 = b2) else (b1 <> b2)
   | VUnit, VUnit -> op 0 0
   | VNone, VNone -> op 0 0
   | VSome v1, VSome v2 -> compare_values v1 v2 op
   | VList l1, VList l2 -> op (List.length l1) (List.length l2)
-  | VPair (a1, b1), VPair (a2, b2) -> op ((a1 = a2) && (b1 = b2)) true
+  | VPair (a1, b1), VPair (a2, b2) -> op ((if a1 = a2 && b1 = b2 then 1 else 0)) 1
   | VClos _, _ | _, VClos _ -> raise CompareFunVals
   | _, _ -> failwith "Cannot compare values of different types"
 
