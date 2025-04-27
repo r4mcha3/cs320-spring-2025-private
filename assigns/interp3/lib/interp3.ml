@@ -193,7 +193,7 @@ let rec eval_expr (env : dyn_env) (e : expr) : value =
         let env' = Env.add name v1 env in
         eval_expr env' body
 
-(* Helper for evaluating binary operations *)
+(* Helper for evaluating binaries *)
 and eval_binop bop v1 v2 =
   match bop, v1, v2 with
   (* Integer arithmetic *)
@@ -205,39 +205,42 @@ and eval_binop bop v1 v2 =
   | Mod, VInt i1, VInt i2 ->
       if i2 = 0 then raise DivByZero else VInt (i1 mod i2)
 
-  (* Float arithmetic *)
+  (* Float *)
   | AddF, VFloat f1, VFloat f2 -> VFloat (f1 +. f2)
   | SubF, VFloat f1, VFloat f2 -> VFloat (f1 -. f2)
   | MulF, VFloat f1, VFloat f2 -> VFloat (f1 *. f2)
   | DivF, VFloat f1, VFloat f2 -> VFloat (f1 /. f2)
   | PowF, VFloat f1, VFloat f2 -> VFloat (f1 ** f2)
 
-(* Comparisons *)
-| Lt, VInt i1, VInt i2 -> VBool (i1 < i2)
-| Lt, VFloat f1, VFloat f2 -> VBool (f1 < f2)
-| Lte, VInt i1, VInt i2 -> VBool (i1 <= i2)
-| Lte, VFloat f1, VFloat f2 -> VBool (f1 <= f2)
-| Gt, VInt i1, VInt i2 -> VBool (i1 > i2)
-| Gt, VFloat f1, VFloat f2 -> VBool (f1 > f2)
-| Gte, VInt i1, VInt i2 -> VBool (i1 >= i2)
-| Gte, VFloat f1, VFloat f2 -> VBool (f1 >= f2)
-| Eq, VInt i1, VInt i2 -> VBool (i1 = i2)
-| Eq, VFloat f1, VFloat f2 -> VBool (f1 = f2)
-| Neq, VInt i1, VInt i2 -> VBool (i1 <> i2)
-| Neq, VFloat f1, VFloat f2 -> VBool (f1 <> f2)
-| Eq, v1, v2 -> VBool (compare_values v1 v2 (=))
-| Neq, v1, v2 -> VBool (compare_values v1 v2 (<>))
-| Lt, v1, v2 | Lte, v1, v2 | Gt, v1, v2 | Gte, v1, v2 ->
-    failwith "Cannot compare non-numeric types"
+  (* Comparisons, handles ints & floats separately *)
+  | Lt, VInt i1, VInt i2 -> VBool (i1 < i2)
+  | Lte, VInt i1, VInt i2 -> VBool (i1 <= i2)
+  | Gt, VInt i1, VInt i2 -> VBool (i1 > i2)
+  | Gte, VInt i1, VInt i2 -> VBool (i1 >= i2)
+  | Lt, VFloat f1, VFloat f2 -> VBool (f1 < f2)
+  | Lte, VFloat f1, VFloat f2 -> VBool (f1 <= f2)
+  | Gt, VFloat f1, VFloat f2 -> VBool (f1 > f2)
+  | Gte, VFloat f1, VFloat f2 -> VBool (f1 >= f2)
 
-  (* Boolean operations *)
+  (* Equality *)
+  | Eq, VInt i1, VInt i2 -> VBool (i1 = i2)
+  | Eq, VFloat f1, VFloat f2 -> VBool (f1 = f2)
+  | Neq, VInt i1, VInt i2 -> VBool (i1 <> i2)
+  | Neq, VFloat f1, VFloat f2 -> VBool (f1 <> f2)
+  | Eq, VBool b1, VBool b2 -> VBool (b1 = b2)
+  | Neq, VBool b1, VBool b2 -> VBool (b1 <> b2)
+  | Eq, VUnit, VUnit -> VBool true
+  | Neq, VUnit, VUnit -> VBool false
+  | Eq, VNone, VNone -> VBool true
+  | Neq, VNone, VNone -> VBool false
+  | Eq, VSome v1, VSome v2 -> eval_binop Eq v1 v2
+  | Neq, VSome v1, VSome v2 -> eval_binop Neq v1 v2
+
   | And, VBool b1, VBool b2 -> VBool (b1 && b2)
   | Or, VBool b1, VBool b2 -> VBool (b1 || b2)
 
-  (* List operations *)
   | Cons, v1, VList l -> VList (v1 :: l)
 
-  (* Pair creation *)
   | Comma, v1, v2 -> VPair (v1, v2)
 
   | _, _, _ -> failwith "Invalid operands for binary operator"
