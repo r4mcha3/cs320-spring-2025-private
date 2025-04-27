@@ -56,7 +56,7 @@ prog:
   | ls = toplet* EOF { ls }
 
 toplet:
-  | LET rc=REC? name=VAR args=arg* ty=annot? EQUAL binding=expr
+  | LET rc=REC? name=VAR args=arg* ty=annot? EQUALS binding=expr
     { {
       is_rec = Option.is_some rc;
       name;
@@ -83,7 +83,7 @@ arg:
   | LPAREN x=VAR ty=annot RPAREN { (x, Some ty) }
 
 expr:
-  | LET rc=REC? name=VAR args=arg* ty=annot? EQUAL binding=expr IN body=expr
+  | LET rc=REC? name=VAR args=arg* ty=annot? EQUALS binding=expr IN body=expr
     { Let {
         is_rec = Option.is_some rc;
         name;
