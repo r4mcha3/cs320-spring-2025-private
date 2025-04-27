@@ -212,13 +212,23 @@ and eval_binop bop v1 v2 =
   | DivF, VFloat f1, VFloat f2 -> VFloat (f1 /. f2)
   | PowF, VFloat f1, VFloat f2 -> VFloat (f1 ** f2)
 
-  (* Comparisons *)
-  | Lt, v1, v2 -> VBool (compare_values v1 v2 (<))
-  | Lte, v1, v2 -> VBool (compare_values v1 v2 (<=))
-  | Gt, v1, v2 -> VBool (compare_values v1 v2 (>))
-  | Gte, v1, v2 -> VBool (compare_values v1 v2 (>=))
-  | Eq, v1, v2 -> VBool (compare_values v1 v2 (=))
-  | Neq, v1, v2 -> VBool (compare_values v1 v2 (<>))
+(* Comparisons *)
+| Lt, VInt i1, VInt i2 -> VBool (i1 < i2)
+| Lt, VFloat f1, VFloat f2 -> VBool (f1 < f2)
+| Lte, VInt i1, VInt i2 -> VBool (i1 <= i2)
+| Lte, VFloat f1, VFloat f2 -> VBool (f1 <= f2)
+| Gt, VInt i1, VInt i2 -> VBool (i1 > i2)
+| Gt, VFloat f1, VFloat f2 -> VBool (f1 > f2)
+| Gte, VInt i1, VInt i2 -> VBool (i1 >= i2)
+| Gte, VFloat f1, VFloat f2 -> VBool (f1 >= f2)
+| Eq, VInt i1, VInt i2 -> VBool (i1 = i2)
+| Eq, VFloat f1, VFloat f2 -> VBool (f1 = f2)
+| Neq, VInt i1, VInt i2 -> VBool (i1 <> i2)
+| Neq, VFloat f1, VFloat f2 -> VBool (f1 <> f2)
+| Eq, v1, v2 -> VBool (compare_values v1 v2 (=))
+| Neq, v1, v2 -> VBool (compare_values v1 v2 (<>))
+| Lt, v1, v2 | Lte, v1, v2 | Gt, v1, v2 | Gte, v1, v2 ->
+    failwith "Cannot compare non-numeric types"
 
   (* Boolean operations *)
   | And, VBool b1, VBool b2 -> VBool (b1 && b2)
@@ -236,7 +246,15 @@ and eval_binop bop v1 v2 =
 and compare_values v1 v2 op =
   match v1, v2 with
   | VInt i1, VInt i2 -> op i1 i2
-  | VFloat f1, VFloat f2 -> op f1 f2
+  | VFloat f1, VFloat f2 -> 
+      (match op with
+       | (<) -> f1 < f2
+       | (<=) -> f1 <= f2
+       | (>) -> f1 > f2
+       | (>=) -> f1 >= f2
+       | (=) -> f1 = f2
+       | (<>) -> f1 <> f2
+       | _ -> failwith "Invalid float comparison")
   | VBool b1, VBool b2 -> op b1 b2
   | VUnit, VUnit -> op 0 0
   | VNone, VNone -> op 0 0
