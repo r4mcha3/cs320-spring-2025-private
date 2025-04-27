@@ -19,8 +19,6 @@ let rec apply_subst (s : subst) (t : ty) : ty =
   | TPair (t1, t2) -> TPair (apply_subst s t1, apply_subst s t2)
   | TFun (t1, t2) -> TFun (apply_subst s t1, apply_subst s t2)
 
-let compose_subst (s1 : subst) (s2 : subst) : subst =
-  List.map (fun (x, t) -> (x, apply_subst s1 t)) s2 @ s1
 
 let rec unify (cs : constr list) : subst option =
   match cs with
@@ -182,7 +180,6 @@ let rec eval_expr (env : dyn_env) (e : expr) : value =
   (* Let and Let Rec *)
   | Let { is_rec; name; binding; body } ->
       if is_rec then
-        let dummy = ref VUnit in
         let rec_clos = VClos { name = Some name; arg = ""; body = binding; env = env } in
         let env' = Env.add name rec_clos env in
         let v1 = eval_expr env' binding in
@@ -245,20 +242,6 @@ and eval_binop bop v1 v2 =
   | Comma, v1, v2 -> VPair (v1, v2)
 
   | _, _, _ -> failwith "Invalid operands for binary operator"
-
-(* Helper for comparisons *)
-and compare_values v1 v2 op =
-  match v1, v2 with
-  | VInt i1, VInt i2 -> op i1 i2
-  | VBool b1, VBool b2 ->
-      if op 1 1 = true then (b1 = b2) else (b1 <> b2)
-  | VUnit, VUnit -> op 0 0
-  | VNone, VNone -> op 0 0
-  | VSome v1, VSome v2 -> compare_values v1 v2 op
-  | VList l1, VList l2 -> op (List.length l1) (List.length l2)
-  | VPair (a1, b1), VPair (a2, b2) -> op ((if a1 = a2 && b1 = b2 then 1 else 0)) 1
-  | VClos _, _ | _, VClos _ -> raise CompareFunVals
-  | _, _ -> failwith "Cannot compare values of different types"
 
 let eval p =
   let rec nest = function
