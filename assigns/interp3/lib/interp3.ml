@@ -212,7 +212,7 @@ and eval_binop bop v1 v2 =
   | DivF, VFloat f1, VFloat f2 -> VFloat (f1 /. f2)
   | PowF, VFloat f1, VFloat f2 -> VFloat (f1 ** f2)
 
-  (* Comparisons, handles ints & floats separately *)
+  (* Comparisons *)
   | Lt, VInt i1, VInt i2 -> VBool (i1 < i2)
   | Lte, VInt i1, VInt i2 -> VBool (i1 <= i2)
   | Gt, VInt i1, VInt i2 -> VBool (i1 > i2)
@@ -236,6 +236,7 @@ and eval_binop bop v1 v2 =
   | Eq, VSome v1, VSome v2 -> eval_binop Eq v1 v2
   | Neq, VSome v1, VSome v2 -> eval_binop Neq v1 v2
 
+
   | And, VBool b1, VBool b2 -> VBool (b1 && b2)
   | Or, VBool b1, VBool b2 -> VBool (b1 || b2)
 
@@ -249,21 +250,12 @@ and eval_binop bop v1 v2 =
 and compare_values v1 v2 op =
   match v1, v2 with
   | VInt i1, VInt i2 -> op i1 i2
-  | VFloat f1, VFloat f2 -> 
-      (match op with
-       | (<) -> f1 < f2
-       | (<=) -> f1 <= f2
-       | (>) -> f1 > f2
-       | (>=) -> f1 >= f2
-       | (=) -> f1 = f2
-       | (<>) -> f1 <> f2
-       | _ -> failwith "Invalid float comparison")
   | VBool b1, VBool b2 -> op b1 b2
   | VUnit, VUnit -> op 0 0
   | VNone, VNone -> op 0 0
   | VSome v1, VSome v2 -> compare_values v1 v2 op
   | VList l1, VList l2 -> op (List.length l1) (List.length l2)
-  | VPair (a1,b1), VPair (a2,b2) -> op (a1 = a2 && b1 = b2) true
+  | VPair (a1, b1), VPair (a2, b2) -> op ((a1 = a2) && (b1 = b2)) true
   | VClos _, _ | _, VClos _ -> raise CompareFunVals
   | _, _ -> failwith "Cannot compare values of different types"
 
