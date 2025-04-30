@@ -1,5 +1,13 @@
 include Utils
 
+let principle_type (ty : ty) (cs : constr list) : ty_scheme option =
+  match unify cs with
+  | None -> None
+  | Some subst ->
+      let ty' = subst_type subst ty in
+      let vars = free_type_vars ty' in
+      Some (Forall (vars, ty'))
+
 let rec infer (env : stc_env) (e : expr) : ty * constr list =
   match e with
   | Unit -> (TUnit, [])
@@ -208,13 +216,7 @@ let rec free_vars_env (env : stc_env) : VarSet.t =
        VarSet.union (VarSet.diff (free_type_vars ty) vars) acc)
     env VarSet.empty
 
-let principle_type (ty : ty) (cs : constr list) : ty_scheme option =
-  match unify cs with
-  | None -> None
-  | Some subst ->
-      let ty' = subst_type subst ty in
-      let vars = free_type_vars ty' in
-      Some (Forall (vars, ty'))
+
 
 
 let type_of (env : stc_env) (e : expr) : ty_scheme option =
@@ -253,7 +255,7 @@ let is_well_typed (p : prog) : bool =
     | { is_rec = true; _ } :: _ ->
         false 
   in go Env.empty p
-  
+
 
 exception AssertFail
 exception DivByZero
