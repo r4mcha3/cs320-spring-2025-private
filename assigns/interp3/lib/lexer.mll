@@ -17,9 +17,9 @@ rule read =
   | ":" { COLON }
   | ";" { SEMICOLON }
   | "fun" { FUN }
-  | "match" { MATCH }
+  (*| "match" { MATCH }
   | "with" { WITH }
-  | "|" { ALT }
+  | "|" { ALT }*)
   | "if" { IF }
   | "then" { THEN }
   | "else" { ELSE }
