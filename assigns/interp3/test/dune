@@ -1,3 +1,0 @@
-(test
- (name test_interp3)
- (libraries interp3 ounit2))
