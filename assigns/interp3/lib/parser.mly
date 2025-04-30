@@ -32,12 +32,12 @@ let mk_list h es =
 %token COLON
 
 %token FUN
-%token MATCH
+(* %token MATCH
 %token WITH
 %token ALT
 %token IF
 %token THEN
-%token ELSE
+%token ELSE *)
 
 %token LPAREN
 %token RPAREN
