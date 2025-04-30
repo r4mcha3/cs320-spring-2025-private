@@ -32,12 +32,12 @@ let mk_list h es =
 %token COLON
 
 %token FUN
-(* %token MATCH
+(*%token MATCH
 %token WITH
 %token ALT
 %token IF
 %token THEN
-%token ELSE *)
+%token ELSE*)
 
 %token LPAREN
 %token RPAREN
@@ -114,6 +114,13 @@ annot:
 
 ty:
   | TUNIT { TUnit }
+  | TINT           { TInt }
+  | TFLOAT         { TFloat }
+  | TBOOL          { TBool }
+  | TLIST; t=ty    { TList t }
+  | TOPTION; t=ty  { TOption t }
+  | LPAREN; t=ty; RPAREN { t }
+  | LPAREN; t1=ty; ARROW; t2=ty; RPAREN { TFun (t1, t2) }
 
 arg:
   | x=VAR { (x, None) }
