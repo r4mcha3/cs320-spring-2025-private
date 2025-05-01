@@ -49,8 +49,8 @@ let mk_list h es =
 %token TINT
 %token TFLOAT
 %token TBOOL
-(* %token TLIST
-%token TOPTION
+%token TLIST
+(* %token TOPTION
 %token <string> TVAR *)
 %token ARROW
 
