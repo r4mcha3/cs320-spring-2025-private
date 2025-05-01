@@ -210,7 +210,7 @@ let parse (s : string) : prog option =
   | prog -> Some prog
   | exception _ -> None
 
-( * let free_vars_env (env : stc_env) : VarSet.t =
+(* let free_vars_env (env : stc_env) : VarSet.t =
   Env.fold
     (fun _ (Forall (vars, ty)) acc ->
        VarSet.union (VarSet.diff (free_type_vars ty) vars) acc)
