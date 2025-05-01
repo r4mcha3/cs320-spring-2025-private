@@ -50,8 +50,8 @@ let mk_list h es =
 %token TFLOAT
 %token TBOOL
 %token TLIST
-(* %token TOPTION
-%token <string> TVAR *)
+%token TOPTION
+(* %token <string> TVAR *)
 %token ARROW
 
 %token TRUE
