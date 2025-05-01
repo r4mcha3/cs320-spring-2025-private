@@ -1,5 +1,39 @@
 include Utils
 
+let rec subst_constrs (s : ty Env.t) (cs : constr list) : constr list =
+  List.map (fun (t1, t2) -> (subst_type s t1, subst_type s t2)) cs
+
+let rec unify (cs : constr list) : ty Env.t option =
+  let rec occurs x t =
+    match t with
+    | TVar y -> x = y
+    | TList t | TOption t -> occurs x t
+    | TPair (t1, t2) | TFun (t1, t2) -> occurs x t1 || occurs x t2
+    | _ -> false
+  in
+  let rec go (s : ty Env.t) (cs : constr list) : ty Env.t option =
+    match cs with
+    | [] -> Some s
+    | (t1, t2) :: rest ->
+        let t1 = subst_type s t1 in
+        let t2 = subst_type s t2 in
+        match t1, t2 with
+        | _ when t1 = t2 -> go s rest
+        | TVar x, _ when not (occurs x t2) ->
+            let s' = Env.add x t2 (Env.map (subst_type (Env.singleton x t2)) s) in
+            go s' (subst_constrs (Env.singleton x t2) rest)
+        | _, TVar x when not (occurs x t1) ->
+            let s' = Env.add x t1 (Env.map (subst_type (Env.singleton x t1)) s) in
+            go s' (subst_constrs (Env.singleton x t1) rest)
+        | TList t1, TList t2
+        | TOption t1, TOption t2 ->
+            go s ((t1, t2) :: rest)
+        | TPair (a1, b1), TPair (a2, b2)
+        | TFun (a1, b1), TFun (a2, b2) ->
+            go s ((a1, a2) :: (b1, b2) :: rest)
+        | _ -> None
+  in go Env.empty cs
+
 let principle_type (ty : ty) (cs : constr list) : ty_scheme option =
   match unify cs with
   | None -> None
@@ -167,40 +201,6 @@ let rec subst_type (s : ty Env.t) (ty : ty) : ty =
   | TOption t -> TOption (subst_type s t)
   | TPair (t1, t2) -> TPair (subst_type s t1, subst_type s t2)
   | TFun (t1, t2) -> TFun (subst_type s t1, subst_type s t2)
-
-let rec subst_constrs (s : ty Env.t) (cs : constr list) : constr list =
-  List.map (fun (t1, t2) -> (subst_type s t1, subst_type s t2)) cs
-
-let rec unify (cs : constr list) : ty Env.t option =
-  let rec occurs x t =
-    match t with
-    | TVar y -> x = y
-    | TList t | TOption t -> occurs x t
-    | TPair (t1, t2) | TFun (t1, t2) -> occurs x t1 || occurs x t2
-    | _ -> false
-  in
-  let rec go (s : ty Env.t) (cs : constr list) : ty Env.t option =
-    match cs with
-    | [] -> Some s
-    | (t1, t2) :: rest ->
-        let t1 = subst_type s t1 in
-        let t2 = subst_type s t2 in
-        match t1, t2 with
-        | _ when t1 = t2 -> go s rest
-        | TVar x, _ when not (occurs x t2) ->
-            let s' = Env.add x t2 (Env.map (subst_type (Env.singleton x t2)) s) in
-            go s' (subst_constrs (Env.singleton x t2) rest)
-        | _, TVar x when not (occurs x t1) ->
-            let s' = Env.add x t1 (Env.map (subst_type (Env.singleton x t1)) s) in
-            go s' (subst_constrs (Env.singleton x t1) rest)
-        | TList t1, TList t2
-        | TOption t1, TOption t2 ->
-            go s ((t1, t2) :: rest)
-        | TPair (a1, b1), TPair (a2, b2)
-        | TFun (a1, b1), TFun (a2, b2) ->
-            go s ((a1, a2) :: (b1, b2) :: rest)
-        | _ -> None
-  in go Env.empty cs
 
 let rec free_type_vars (ty : ty) : VarSet.t =
   match ty with
