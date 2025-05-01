@@ -9,10 +9,10 @@ let rec subst_type (s : ty Env.t) (ty : ty) : ty =
   | TPair (t1, t2) -> TPair (subst_type s t1, subst_type s t2)
   | TFun (t1, t2) -> TFun (subst_type s t1, subst_type s t2)
 
-let rec subst_constrs (s : ty Env.t) (cs : constr list) : constr list =
+let subst_constrs (s : ty Env.t) (cs : constr list) : constr list =
   List.map (fun (t1, t2) -> (subst_type s t1, subst_type s t2)) cs
 
-let rec unify (cs : constr list) : ty Env.t option =
+let unify (cs : constr list) : ty Env.t option =
   let rec occurs x t =
     match t with
     | TVar y -> x = y
@@ -42,6 +42,14 @@ let rec unify (cs : constr list) : ty Env.t option =
             go s ((a1, a2) :: (b1, b2) :: rest)
         | _ -> None
   in go Env.empty cs
+
+let rec free_type_vars (ty : ty) : VarSet.t =
+  match ty with
+  | TUnit | TInt | TFloat | TBool -> VarSet.empty
+  | TVar x -> VarSet.singleton x
+  | TList t | TOption t -> free_type_vars t
+  | TPair (t1, t2) | TFun (t1, t2) ->
+      VarSet.union (free_type_vars t1) (free_type_vars t2)
 
 let principle_type (ty : ty) (cs : constr list) : ty_scheme option =
   match unify cs with
@@ -202,22 +210,11 @@ let parse (s : string) : prog option =
   | prog -> Some prog
   | exception _ -> None
 
-let rec free_type_vars (ty : ty) : VarSet.t =
-  match ty with
-  | TUnit | TInt | TFloat | TBool -> VarSet.empty
-  | TVar x -> VarSet.singleton x
-  | TList t | TOption t -> free_type_vars t
-  | TPair (t1, t2) | TFun (t1, t2) ->
-      VarSet.union (free_type_vars t1) (free_type_vars t2)
-
 let rec free_vars_env (env : stc_env) : VarSet.t =
   Env.fold
     (fun _ (Forall (vars, ty)) acc ->
        VarSet.union (VarSet.diff (free_type_vars ty) vars) acc)
     env VarSet.empty
-
-
-
 
 let type_of (env : stc_env) (e : expr) : ty_scheme option =
   let ty, cs = infer env e in
