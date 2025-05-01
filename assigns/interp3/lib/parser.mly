@@ -142,7 +142,7 @@ expr:
   | MATCH; e=expr3; WITH; ALT; x=VAR; COMMA; y=VAR; ARROW; body=expr
     { PairMatch { matched = e; fst_name = x; snd_name = y; case = body } }
 
-  | MATCH; e=expr3; WITH; ALT; "Some"; x=VAR; ARROW; some_case=expr; ALT; "None"; ARROW; none_case=expr
+  | MATCH; e=expr3; WITH; ALT; SOME; x=VAR; ARROW; some_case=expr; ALT; NONE; ARROW; none_case=expr
     { OptMatch { matched = e; some_name = x; some_case; none_case } }
 
   | MATCH; e=expr3; WITH; ALT; x=VAR; CONS; y=VAR; ARROW; cons_case=expr; ALT; LBRACKET; RBRACKET; ARROW; nil_case=expr
