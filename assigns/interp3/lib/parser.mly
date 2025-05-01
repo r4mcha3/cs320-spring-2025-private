@@ -35,9 +35,9 @@ let mk_list h es =
 %token MATCH
 %token WITH
 %token ALT
-(* %token IF
+%token IF
 %token THEN
-%token ELSE *)
+%token ELSE 
 
 %token LPAREN
 %token RPAREN
@@ -138,7 +138,7 @@ expr:
     }
   | FUN; args=arg*; ARROW; body=expr { mk_func None args body }
   | e = expr2 { e }
-  
+
   | MATCH; e=expr3; WITH; ALT; x=VAR; COMMA; y=VAR; ARROW; body=expr
     { PairMatch { matched = e; fst_name = x; snd_name = y; case = body } }
 
@@ -147,6 +147,9 @@ expr:
 
   | MATCH; e=expr3; WITH; ALT; x=VAR; CONS; y=VAR; ARROW; cons_case=expr; ALT; LBRACKET; RBRACKET; ARROW; nil_case=expr
     { ListMatch { matched = e; hd_name = x; tl_name = y; cons_case; nil_case } }
+
+  | IF; cond=expr; THEN; e_then=expr; ELSE; e_else=expr
+    { If (cond, e_then, e_else) }
 
 
 %inline bop:
