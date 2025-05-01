@@ -210,11 +210,11 @@ let parse (s : string) : prog option =
   | prog -> Some prog
   | exception _ -> None
 
-let rec free_vars_env (env : stc_env) : VarSet.t =
+( * let free_vars_env (env : stc_env) : VarSet.t =
   Env.fold
     (fun _ (Forall (vars, ty)) acc ->
        VarSet.union (VarSet.diff (free_type_vars ty) vars) acc)
-    env VarSet.empty
+    env VarSet.empty *)
 
 let type_of (env : stc_env) (e : expr) : ty_scheme option =
   let ty, cs = infer env e in
