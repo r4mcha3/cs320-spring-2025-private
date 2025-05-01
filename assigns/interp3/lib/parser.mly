@@ -49,9 +49,9 @@ let mk_list h es =
 %token TINT
 %token TFLOAT
 %token TBOOL
-%token TLIST
+(* %token TLIST
 %token TOPTION
-%token <string> TVAR
+%token <string> TVAR *)
 %token ARROW
 
 %token TRUE
@@ -83,7 +83,7 @@ let mk_list h es =
 
 %nonassoc TLIST
 %nonassoc TOPTION
-%right ARROW
+(* %right ARROW *)
 %nonassoc COMMA
 %right OR
 %right AND
