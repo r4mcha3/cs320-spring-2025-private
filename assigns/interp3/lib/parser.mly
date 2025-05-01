@@ -51,7 +51,7 @@ let mk_list h es =
 %token TBOOL
 %token TLIST
 %token TOPTION
-(* %token <string> TVAR *)
+%token <string> TVAR 
 %token ARROW
 
 %token TRUE
@@ -121,6 +121,8 @@ ty:
   | TOPTION; t=ty  { TOption t }
   | LPAREN; t=ty; RPAREN { t }
   | LPAREN; t1=ty; ARROW; t2=ty; RPAREN { TFun (t1, t2) }
+  | TVAR id { TVar id }
+
 
 arg:
   | x=VAR { (x, None) }
