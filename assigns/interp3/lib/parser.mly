@@ -121,7 +121,7 @@ ty:
   | TOPTION; t=ty  { TOption t }
   | LPAREN; t=ty; RPAREN { t }
   | LPAREN; t1=ty; ARROW; t2=ty; RPAREN { TFun (t1, t2) }
-  | TVAR as id               { TVar id }
+  | TVAR(id) { TVar id }
 
 
 arg:
