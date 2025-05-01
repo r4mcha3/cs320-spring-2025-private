@@ -81,9 +81,9 @@ let mk_list h es =
 %token NONE
 %token ASSERT
 
-%nonassoc TLIST
+(* %nonassoc TLIST
 %nonassoc TOPTION
-(* %right ARROW *)
+%right ARROW *)
 %nonassoc COMMA
 %right OR
 %right AND
