@@ -1,5 +1,14 @@
 include Utils
 
+let rec subst_type (s : ty Env.t) (ty : ty) : ty =
+  match ty with
+  | TUnit | TInt | TFloat | TBool -> ty
+  | TVar x -> (match Env.find_opt x s with Some t -> t | None -> TVar x)
+  | TList t -> TList (subst_type s t)
+  | TOption t -> TOption (subst_type s t)
+  | TPair (t1, t2) -> TPair (subst_type s t1, subst_type s t2)
+  | TFun (t1, t2) -> TFun (subst_type s t1, subst_type s t2)
+
 let rec subst_constrs (s : ty Env.t) (cs : constr list) : constr list =
   List.map (fun (t1, t2) -> (subst_type s t1, subst_type s t2)) cs
 
@@ -192,15 +201,6 @@ let parse (s : string) : prog option =
   match Parser.prog Lexer.read (Lexing.from_string s) with
   | prog -> Some prog
   | exception _ -> None
-
-let rec subst_type (s : ty Env.t) (ty : ty) : ty =
-  match ty with
-  | TUnit | TInt | TFloat | TBool -> ty
-  | TVar x -> (match Env.find_opt x s with Some t -> t | None -> TVar x)
-  | TList t -> TList (subst_type s t)
-  | TOption t -> TOption (subst_type s t)
-  | TPair (t1, t2) -> TPair (subst_type s t1, subst_type s t2)
-  | TFun (t1, t2) -> TFun (subst_type s t1, subst_type s t2)
 
 let rec free_type_vars (ty : ty) : VarSet.t =
   match ty with
