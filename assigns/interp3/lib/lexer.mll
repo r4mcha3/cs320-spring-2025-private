@@ -20,9 +20,9 @@ rule read =
   | "match" { MATCH }
   | "with" { WITH }
   | "|" { ALT }
-  (*| "if" { IF }
+  | "if" { IF }
   | "then" { THEN }
-  | "else" { ELSE } *)
+  | "else" { ELSE }
   | "(" { LPAREN }
   | ")" { RPAREN }
   | "[" { LBRACKET }
