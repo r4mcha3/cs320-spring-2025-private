@@ -20,66 +20,22 @@ let mk_list h es =
   in Bop (Cons, h, tl)
 %}
 
-%token EOF
 %token <int> INT
 %token <float> FLOAT
 %token <string> VAR
-
-%token LET
-%token REC
-%token EQ
-%token IN
-%token COLON
-
-%token FUN
-%token MATCH
-%token WITH
-%token ALT
-%token IF
-%token THEN
-%token ELSE 
-
-%token LPAREN
-%token RPAREN
-%token LBRACKET
-%token RBRACKET
-%token SEMICOLON
-
-%token TUNIT
-%token TINT
-%token TFLOAT
-%token TBOOL
-%token TLIST
-%token TOPTION
 %token <string> TVAR 
-%token ARROW
 
-%token TRUE
-%token FALSE
+%token LET REC EQ IN COLON
+%token FUN MATCH WITH ALT IF THEN ELSE 
+%token LPAREN RPAREN LBRACKET RBRACKET SEMICOLON
+%token TUNIT TINT TFLOAT TBOOL TLIST TOPTION ARROW
+%token TRUE FALSE SOME NONE ASSERT
 
-%token ADD
-%token SUB
-%token STAR
-%token DIV
-%token MOD
-%token ADDF
-%token SUBF
-%token MULF
-%token DIVF
-%token POW
-%token CONS
-%token LT
-%token LTE
-%token GT
-%token GTE
-%token NEQ
-%token AND
-%token OR
-%token COMMA
+%token ADD SUB STAR DIV MOD
+%token ADDF SUBF MULF DIVF POW
+%token CONS LT LTE GT GTE EQ NEQ AND OR COMMA
 
-%token SOME
-%token NONE
-%token ASSERT
+%token EOF
 
 (* %nonassoc TLIST
 %nonassoc TOPTION
