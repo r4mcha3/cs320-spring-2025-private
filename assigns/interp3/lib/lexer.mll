@@ -17,10 +17,10 @@ rule read =
   | ":" { COLON }
   | ";" { SEMICOLON }
   | "fun" { FUN }
-  (*| "match" { MATCH }
+  | "match" { MATCH }
   | "with" { WITH }
   | "|" { ALT }
-  | "if" { IF }
+  (*| "if" { IF }
   | "then" { THEN }
   | "else" { ELSE } *)
   | "(" { LPAREN }
